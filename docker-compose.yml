@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  fastapi:
+    build: ./fastapi
+    container_name: fastapi_container
+    ports:
+      - "8001:80"
+    volumes:
+      - ./fastapi/app/data:/usr/src/app/app/data
+    environment:
+      - WAIT_HOSTS=mongo:27017
+    depends_on:
+      - mongo
+
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress_container
+    ports:
+      - "8000:80"
+    volumes:
+      - ./wordpress:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpressuser
+      WORDPRESS_DB_PASSWORD: wordpresspassword
+      WORDPRESS_DB_NAME: wordpress
+    depends_on:
+      - db
+
+  db:
+    image: mysql:5.7
+    container_name: db_container
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpressuser
+      MYSQL_PASSWORD: wordpresspassword
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo_container
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  db_data: {}
+  wordpress_data: {}
+  mongo_data: {}
