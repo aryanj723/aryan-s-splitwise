@@ -32,7 +32,7 @@ services:
     image: mysql:5.7
     container_name: db_container
     volumes:
-      - db_data:/var/lib/mysql
+      - ./db_data:/var/lib/mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -46,7 +46,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - ./mongo_data:/data/db
 
 volumes:
   db_data: {}
