@@ -1,0 +1,130 @@
+/* Custom styles for Group Expense Manager */
+
+body {
+    font-family: 'Arial', sans-serif;
+}
+
+h2 {
+    font-weight: bold;
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+p {
+    font-size: 1.2em;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    font-size: 1em;
+    margin: 10px 20px; /* Add left margin to indent */
+}
+
+.table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.modal-content {
+    font-size: 1em;
+}
+
+.modal-title {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.form-control {
+    margin-bottom: 15px;
+}
+
+/* Layout and section styling */
+.creator, .members, .balances {
+    font-weight: bold;
+    display: block;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Center the entire container */
+}
+
+.left-column {
+    flex: 1 1 40%; /* Take up 40% of the available space */
+}
+
+.right-column {
+    flex: 1 1 60%; /* Take up 60% of the available space */
+    padding-left: 20px;
+    display: flex;
+    justify-content: flex-start; /* Align the box to the left */
+}
+
+.box {
+    width: 100%; /* Make the box take the full width of the right column */
+    max-width: 600px; /* Increased max width for better readability */
+    border: 1px solid #ddd;
+    padding: 20px;
+    background-color: #f9f9f9;
+    margin-top: 20px;
+}
+
+.box h4 {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.group-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between; /* Add space between the buttons */
+}
+
+.group-button {
+    width: calc(33.33% - 20px); /* Adjust the percentage as needed */
+    margin-bottom: 20px;
+    font-size: 18px;
+    padding: 15px 20px; /* Increase padding to make buttons larger */
+}
+
+.group-button:hover {
+    background-color: #0056b3;
+}

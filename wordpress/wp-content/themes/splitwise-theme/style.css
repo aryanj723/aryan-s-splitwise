@@ -1,0 +1,63 @@
+/*
+Theme Name: Splitwise Theme
+Theme URI: http://example.com/splitwise-theme
+Author: Your Name
+Author URI: http://example.com
+Description: A custom WordPress theme similar to Splitwise.
+Version: 1.0
+*/
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f7f7f7;
+  color: #333;
+}
+
+header {
+  background-color: #2d72d9;
+  color: white;
+  padding: 1em;
+  text-align: center;
+}
+
+footer {
+  background-color: #2d72d9;
+  color: white;
+  padding: 1em;
+  text-align: center;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+}
+
+.content {
+  padding: 2em;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  text-align: center;
+}
+
+nav ul li {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+nav ul li a.btn {
+  background-color: red;
+  color: white;
+  padding: 15px 30px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  font-size: 18px;
+  display: inline-block;
+}
+
+nav ul li a.btn:hover {
+  background-color: darkred;
+}
