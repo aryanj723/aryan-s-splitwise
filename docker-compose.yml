@@ -47,8 +47,3 @@ services:
       - "27017:27017"
     volumes:
       - ./mongo_data:/data/db
-
-volumes:
-  db_data: {}
-  wordpress: {}
-  mongo_data: {}

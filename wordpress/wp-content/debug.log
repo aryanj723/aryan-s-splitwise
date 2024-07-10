@@ -1,0 +1,28 @@
+[09-Jul-2024 07:51:51 UTC] PHP Warning:  Undefined array key "name" in /var/www/html/wp-content/plugins/group-expense-manager/shortcodes/group_details.php on line 30
+[09-Jul-2024 07:51:51 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/wp-content/plugins/group-expense-manager/shortcodes/group_details.php on line 30
+[09-Jul-2024 07:51:51 UTC] PHP Warning:  Undefined array key "creator_email" in /var/www/html/wp-content/plugins/group-expense-manager/shortcodes/group_details.php on line 33
+[09-Jul-2024 07:51:51 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/wp-content/plugins/group-expense-manager/shortcodes/group_details.php on line 33
+[09-Jul-2024 07:51:51 UTC] PHP Warning:  Undefined array key "members" in /var/www/html/wp-content/plugins/group-expense-manager/shortcodes/group_details.php on line 35
+[09-Jul-2024 07:51:51 UTC] PHP Warning:  foreach() argument must be of type array|object, null given in /var/www/html/wp-content/plugins/group-expense-manager/shortcodes/group_details.php on line 35
+[09-Jul-2024 07:51:51 UTC] PHP Warning:  Undefined array key "entries" in /var/www/html/wp-content/plugins/group-expense-manager/shortcodes/group_details.php on line 65
+[09-Jul-2024 07:51:51 UTC] PHP Fatal error:  Uncaught TypeError: usort(): Argument #1 ($array) must be of type array, null given in /var/www/html/wp-content/plugins/group-expense-manager/helpers.php:23
+Stack trace:
+#0 /var/www/html/wp-content/plugins/group-expense-manager/helpers.php(23): usort(NULL, Object(Closure))
+#1 /var/www/html/wp-content/plugins/group-expense-manager/shortcodes/group_details.php(65): gem_display_expenses(NULL)
+#2 /var/www/html/wp-includes/shortcodes.php(433): gem_group_details_shortcode(Array, '', 'gem_group_detai...')
+#3 [internal function]: do_shortcode_tag(Array)
+#4 /var/www/html/wp-includes/shortcodes.php(273): preg_replace_callback('/\\[(\\[?)(gem_gr...', 'do_shortcode_ta...', '[gem_group_deta...')
+#5 /var/www/html/wp-includes/class-wp-hook.php(324): do_shortcode('[gem_group_deta...')
+#6 /var/www/html/wp-includes/plugin.php(205): WP_Hook->apply_filters('[gem_group_deta...', Array)
+#7 /var/www/html/wp-includes/post-template.php(256): apply_filters('the_content', '<!-- wp:shortco...')
+#8 /var/www/html/wp-content/themes/splitwise-theme/page.php(6): the_content()
+#9 /var/www/html/wp-includes/template-loader.php(106): include('/var/www/html/w...')
+#10 /var/www/html/wp-blog-header.php(19): require_once('/var/www/html/w...')
+#11 /var/www/html/index.php(17): require('/var/www/html/w...')
+#12 {main}
+  thrown in /var/www/html/wp-content/plugins/group-expense-manager/helpers.php on line 23
+[09-Jul-2024 14:31:05 UTC] PHP Warning:  chmod(): Operation not permitted in /var/www/html/wp-admin/includes/class-wp-filesystem-direct.php on line 173
+[10-Jul-2024 01:31:09 UTC] PHP Warning:  Undefined array key "host" in /var/www/html/wp-includes/canonical.php on line 716
+[10-Jul-2024 01:31:09 UTC] PHP Deprecated:  strtolower(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/wp-includes/canonical.php on line 716
+[10-Jul-2024 01:31:09 UTC] PHP Warning:  Undefined array key "host" in /var/www/html/wp-includes/canonical.php on line 727
+[10-Jul-2024 01:31:09 UTC] PHP Warning:  Undefined array key "host" in /var/www/html/wp-includes/canonical.php on line 730

@@ -24,6 +24,10 @@
 // (it gets parsed by the upstream wizard in https://github.com/WordPress/WordPress/blob/f27cb65e1ef25d11b535695a660e7282b98eb742/wp-admin/setup-config.php#L356-L392)
 
 // a helper function to lookup "env_FILE", "env", then fallback
+define('WP_HOME', 'http://20.173.74.209:8000');
+define('WP_SITEURL', 'http://20.173.74.209:8000');
+
+
 if (!function_exists('getenv_docker')) {
 	// https://github.com/docker-library/wordpress/issues/588 (WP-CLI will load this file 2x)
 	function getenv_docker($env, $default) {
