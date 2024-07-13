@@ -14,7 +14,7 @@ services:
       - mongo
 
   wordpress:
-    image: wordpress:latest
+    image: wordpress:6.5.5
     container_name: wordpress_container
     ports:
       - "8000:80"
@@ -29,7 +29,7 @@ services:
       - db
 
   db:
-    image: mysql:5.7
+    image: mysql:8.0
     container_name: db_container
     volumes:
       - ./db_data:/var/lib/mysql
@@ -41,7 +41,7 @@ services:
       MYSQL_PASSWORD: wordpresspassword
 
   mongo:
-    image: mongo:latest
+    image: mongo:4.4.6-bionic
     container_name: mongo_container
     ports:
       - "27017:27017"
