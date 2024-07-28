@@ -1,6 +1,7 @@
 import threading
 from collections import defaultdict
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
+import time
 
 # MongoDB connection setup
 client = MongoClient("mongodb://mongo:27017/")
@@ -14,8 +15,31 @@ entries_collection = db["entries"]
 # Lock management
 group_locks = defaultdict(threading.Lock)
 
-def get_group_lock(group_id: str) -> threading.Lock:
-    return group_locks[group_id]
+
+def get_group_lock(group_id: str, timeout: int = 5) -> bool:
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        result = groups_collection.find_one_and_update(
+            {"id": group_id, "locked": False},
+            {"$set": {"locked": True}},
+            return_document=ReturnDocument.AFTER
+        )
+        if result:
+            return True
+        time.sleep(0.1)  # Sleep for 100ms before retrying
+    return False
+
+def release_group_lock(group_id: str):
+    groups_collection.update_one(
+        {"id": group_id},
+        {"$set": {"locked": False}}
+    )
+
+def update_group_data(group_id: str, update_fields: dict):
+    groups_collection.update_one(
+        {"id": group_id},
+        {"$set": update_fields}
+    )
 
 def load_user_data(email: str) -> dict:
     user_data = users_collection.find_one({"email": email})
