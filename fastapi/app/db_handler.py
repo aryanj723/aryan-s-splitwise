@@ -2,6 +2,7 @@ import threading
 from collections import defaultdict
 from pymongo import MongoClient, ReturnDocument
 import time
+from app.logging_config import logger
 
 # MongoDB connection setup
 client = MongoClient("mongodb://mongo:27017/")
@@ -15,25 +16,32 @@ entries_collection = db["entries"]
 # Lock management
 group_locks = defaultdict(threading.Lock)
 
-
 def get_group_lock(group_id: str, timeout: int = 5) -> bool:
     start_time = time.time()
     while time.time() - start_time < timeout:
-        result = groups_collection.find_one_and_update(
-            {"id": group_id, "locked": False},
-            {"$set": {"locked": True}},
-            return_document=ReturnDocument.AFTER
-        )
-        if result:
-            return True
+        with group_locks[group_id]:  # Ensure only one thread accesses this section at a time per group
+            result = groups_collection.find_one_and_update(
+                {"id": group_id, "locked": {"$ne": True}},  # Only update if 'locked' is not True
+                {"$set": {"locked": True}},
+                return_document=ReturnDocument.AFTER
+            )
+            if result:
+                logger.info(f"Lock acquired for group {group_id}")
+                return True
         time.sleep(0.1)  # Sleep for 100ms before retrying
+    logger.warning(f"Could not acquire lock for group {group_id} within timeout")
     return False
 
 def release_group_lock(group_id: str):
-    groups_collection.update_one(
-        {"id": group_id},
-        {"$set": {"locked": False}}
-    )
+    with group_locks[group_id]:  # Ensure only one thread accesses this section at a time per group
+        result = groups_collection.update_one(
+            {"id": group_id},
+            {"$set": {"locked": False}}
+        )
+        if result.modified_count > 0:
+            logger.info(f"Lock released for group {group_id}")
+        else:
+            logger.warning(f"Failed to release lock for group {group_id}")
 
 def update_group_data(group_id: str, update_fields: dict):
     groups_collection.update_one(
@@ -71,11 +79,12 @@ def update_group_balances(group_id: str, balances: list):
 def append_group_entry(group_id: str, entry: dict):
     groups_collection.update_one({"id": group_id}, {"$push": {"entries": entry}})
 
+def add_group_member(group_id: str, member_email: str):
+    groups_collection.update_one({"id": group_id}, {"$push": {"members": member_email}})
+
 def remove_group_member(group_id: str, member_email: str):
     groups_collection.update_one({"id": group_id}, {"$pull": {"members": member_email}})
 
 def db_delete_group(group_id: str):
     groups_collection.delete_one({"id": group_id})
     entries_collection.delete_many({"group_id": group_id})
-
-

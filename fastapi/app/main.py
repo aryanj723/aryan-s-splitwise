@@ -19,6 +19,10 @@ class AddPaymentRequest(BaseModel):
     email: str
     payment: schemas.PaymentCreate
 
+class AddUserRequest(BaseModel):
+    group_name: str
+    member_email: str
+    new_member_email: str
 class UserBalanceRequest(BaseModel):
     group_name: str
     user_email: str
@@ -34,6 +38,8 @@ class GetBalancesRequest(BaseModel):
     group_id: str
 
 class AddCurrencyRequest(BaseModel):
+    group_name: str
+    email: str
     currency: str
     conversion_rate: float
 
@@ -63,12 +69,12 @@ async def create_group(background_tasks: BackgroundTasks, group: schemas.GroupCr
     return {"message": "Group creation is successful."}
 
 @app.post("/groups/add_currency")
-async def add_currency(background_tasks: BackgroundTasks, request: AddCurrencyRequest = Body(...), group_name: str = Body(...), email: str = Body(...)):
-    logger.info(f"Received request to add currency {request.currency} with conversion rate {request.conversion_rate} to group {group_name} by {email}")
+async def add_currency(background_tasks: BackgroundTasks, request: AddCurrencyRequest):
+    logger.info(f"Received request to add currency {request.currency} with conversion rate {request.conversion_rate} to group {request.group_name} by {request.email}")
 
-    group = crud.get_group_details_by_name(group_name, email)
+    group = crud.get_group_details_by_name(request.group_name, request.email)
     if not group:
-        logger.error(f"Adding currency failed: Group {group_name} not found for user {email}")
+        logger.error(f"Adding currency failed: Group {request.group_name} not found for user {request.email}")
         raise HTTPException(status_code=404, detail="Group not found.")
      
     def add_currency_task():
@@ -162,3 +168,14 @@ async def delete_group(background_tasks: BackgroundTasks, request: GroupNameRequ
     background_tasks.add_task(delete_group_task)
     return {"message": "Success"}
 
+@app.post("/groups/add_user")
+async def add_user_to_group(request: AddUserRequest, background_tasks: BackgroundTasks):
+    group = await crud.get_group_details_by_name(request.group_name, request.member_email)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found or member does not belong to the group")
+    
+    if request.new_member_email in group.members:
+        raise HTTPException(status_code=400, detail="New member is already in the group")
+    
+    background_tasks.add_task(crud.add_user_to_group, group.id, request.new_member_email)
+    return {"message": "Request received, processing in background"}
