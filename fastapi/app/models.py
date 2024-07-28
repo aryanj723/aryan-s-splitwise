@@ -5,9 +5,11 @@ class Entry(BaseModel):
     type: str
     description: str
     amount: float
+    currency: str
     paid_by: str
     date: str
     added_by: str
+    cancelled: bool = False
 
 class Expense(Entry):
     shares: Dict[str, float]
@@ -22,3 +24,6 @@ class Group(BaseModel):
     members: List[str]
     entries: List[Union[Expense, Payment]]
     balances: List[List[Union[str, float]]] = []
+    local_currency: str
+    currency_conversion_rates: Dict[str, float] = {}
+    locked: bool = False 

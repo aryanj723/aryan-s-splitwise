@@ -3,12 +3,13 @@ import time
 
 BASE_URL = "http://localhost:8001"
 
-def call_create_group(name, creator_email, members):
+def call_create_group(name, creator_email, members, local_currency):
     url = f"{BASE_URL}/groups/create"
     payload = {
         "name": name,
         "creator_email": creator_email,
-        "members": members
+        "members": members,
+        "local_currency": local_currency
     }
     headers = {
         "Content-Type": "application/json"
@@ -44,6 +45,36 @@ def call_add_payment(name, email, payment):
 
     requests.post(url, json=payload, headers=headers)
     print(f"Payment addition to {name} by {email}: API called")
+
+def call_add_currency(group_name, email, currency, conversion_rate):
+    url = f"{BASE_URL}/groups/add_currency"
+    payload = {
+        "group_name": group_name,
+        "email": email,
+        "currency": currency,
+        "conversion_rate": conversion_rate
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    print(f"Currency {currency} addition to group {group_name} by {email}: API called with status code {response.status_code}")
+    print(response.text)
+
+def call_remove_expense(group_name, member_email, expense_index):
+    url = f"{BASE_URL}/groups/remove_expense"
+    payload = {
+        "group_name": group_name,
+        "member_email": member_email,
+        "expense_index": expense_index
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    requests.post(url, json=payload, headers=headers)
+    print(f"Expense index {expense_index} removal from group {group_name} by {member_email}: API called")
 
 def get_group_id(name, email, retries=10, delay=1):
     url = f"{BASE_URL}/groups/get_group_details"
@@ -81,8 +112,8 @@ def get_balances(name, email, retries=10, delay=1):
 
 if __name__ == "__main__":
     # Create initial groups and add expenses/payments
-    call_create_group("Trip", "ali@example.com", ["bobi@example.com"])
-    call_create_group("Dinner", "charl@example.com", ["dav@example.com"])
+    call_create_group("Trip", "ali@example.com", ["bobi@example.com"], "USD")
+    call_create_group("Dinner", "charl@example.com", ["dav@example.com"], "USD")
 
     call_add_expense("Trip", "ali@example.com", {
         "description": "Hotel",
@@ -91,7 +122,8 @@ if __name__ == "__main__":
         "shares": {
             "ali@example.com": 100,
             "bobi@example.com": 100
-        }
+        },
+        "currency": "USD"
     })
 
     call_add_expense("Trip", "bobi@example.com", {
@@ -101,10 +133,11 @@ if __name__ == "__main__":
         "shares": {
             "ali@example.com": 50,
             "bobi@example.com": 50
-        }
+        },
+        "currency": "USD"
     })
 
-    call_create_group("Trip", "alice@example.com", ["bob@example.com", "charlie@example.com", "dave@example.com", "eve@example.com"])
+    call_create_group("Trip", "alice@example.com", ["bob@example.com", "charlie@example.com", "dave@example.com", "eve@example.com"], "USD")
 
     call_add_expense("Dinner", "charl@example.com", {
         "description": "Pizza",
@@ -113,7 +146,8 @@ if __name__ == "__main__":
         "shares": {
             "charl@example.com": 25,
             "dav@example.com": 25
-        }
+        },
+        "currency": "USD"
     })
 
     call_add_expense("Trip", "alice@example.com", {
@@ -126,7 +160,8 @@ if __name__ == "__main__":
             "charlie@example.com": 100,
             "dave@example.com": 100,
             "eve@example.com": 100
-        }
+        },
+        "currency": "USD"
     })
 
     call_add_expense("Trip", "bob@example.com", {
@@ -139,7 +174,8 @@ if __name__ == "__main__":
             "charlie@example.com": 40,
             "dave@example.com": 40,
             "eve@example.com": 40
-        }
+        },
+        "currency": "USD"
     })
 
     call_add_expense("Trip", "charlie@example.com", {
@@ -152,13 +188,15 @@ if __name__ == "__main__":
             "charlie@example.com": 60,
             "dave@example.com": 60,
             "eve@example.com": 60
-        }
+        },
+        "currency": "USD"
     })
     call_add_payment("Trip", "charlie@example.com", {
         "description": "Payment to Dave",
         "amount": 50,
         "paid_by": "charlie@example.com",
-        "paid_to": "dave@example.com"
+        "paid_to": "dave@example.com",
+        "currency": "USD"
     })
 
     call_add_expense("Dinner", "dav@example.com", {
@@ -168,20 +206,23 @@ if __name__ == "__main__":
         "shares": {
             "charl@example.com": 15,
             "dav@example.com": 15
-        }
+        },
+        "currency": "USD"
     })
 
     call_add_payment("Trip", "bobi@example.com", {
         "description": "Payment to Ali",
         "amount": 50,
         "paid_by": "bobi@example.com",
-        "paid_to": "ali@example.com"
+        "paid_to": "ali@example.com",
+        "currency": "USD"
     })
     call_add_payment("Dinner", "dav@example.com", {
         "description": "Payment to Charl",
         "amount": 20,
         "paid_by": "dav@example.com",
-        "paid_to": "charl@example.com"
+        "paid_to": "charl@example.com",
+        "currency": "USD"
     })
 
     trip_group_id = get_group_id("Trip", "ali@example.com")
@@ -191,7 +232,7 @@ if __name__ == "__main__":
     expected_dinner_balances = [
         ["charl@example.com", "dav@example.com", 10]
     ]
-
+    time.sleep(2)
     actual_trip_balances = get_balances("Trip", "ali@example.com")
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
 
@@ -211,7 +252,8 @@ if __name__ == "__main__":
             "charlie@example.com": 50,
             "dave@example.com": 50,
             "eve@example.com": 50
-        }
+        },
+        "currency": "USD"
     })
 
     call_add_expense("Trip", "eve@example.com", {
@@ -224,32 +266,37 @@ if __name__ == "__main__":
             "charlie@example.com": 30,
             "dave@example.com": 30,
             "eve@example.com": 30
-        }
+        },
+        "currency": "USD"
     })
 
     call_add_payment("Trip", "bob@example.com", {
         "description": "Payment to Alice",
         "amount": 60,
         "paid_by": "bob@example.com",
-        "paid_to": "alice@example.com"
+        "paid_to": "alice@example.com",
+        "currency": "USD"
     })
     call_add_payment("Trip", "dave@example.com", {
         "description": "Payment to Eve",
         "amount": 70,
         "paid_by": "dave@example.com",
-        "paid_to": "eve@example.com"
+        "paid_to": "eve@example.com",
+        "currency": "USD"
     })
     call_add_payment("Trip", "eve@example.com", {
         "description": "Payment to Bob",
         "amount": 50,
         "paid_by": "eve@example.com",
-        "paid_to": "bob@example.com"
+        "paid_to": "bob@example.com",
+        "currency": "USD"
     })
     call_add_payment("Trip", "alice@example.com", {
         "description": "Payment to Charlie",
         "amount": 30,
         "paid_by": "alice@example.com",
-        "paid_to": "charlie@example.com"
+        "paid_to": "charlie@example.com",
+        "currency": "USD"
     })
 
     trip_group_id = get_group_id("Trip", "alice@example.com")
@@ -260,8 +307,44 @@ if __name__ == "__main__":
         ["bob@example.com", "charlie@example.com", 30.0],
         ["dave@example.com", "charlie@example.com", 10.0]
     ]
-
+    time.sleep(2)
     actual_trip_balances = get_balances("Trip", "alice@example.com")
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
 
     print("Balance verification for additional case: Passed")
+
+    # Add new tests for currency addition and expense removal
+
+    call_add_currency("Trip", "alice@example.com", "EUR", 1.2)
+
+    call_add_expense("Trip", "alice@example.com", {
+        "description": "Hotel in EUR",
+        "amount": 100,
+        "paid_by": "alice@example.com",
+        "shares": {
+            "alice@example.com": 40,
+            "bob@example.com": 60
+        },
+        "currency": "EUR"
+    })
+
+    expected_trip_balances = [
+        ["eve@example.com", "alice@example.com", 150.0],
+        ["bob@example.com", "alice@example.com", 112.0],
+        ["bob@example.com", "charlie@example.com", 30.0],
+        ["dave@example.com", "charlie@example.com", 10.0]
+    ]
+
+    actual_trip_balances = get_balances("Trip", "alice@example.com")
+    assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
+
+    call_remove_expense("Trip", "alice@example.com", 1)  # Assuming the index of "Hotel in EUR" expense is 1
+
+    expected_trip_balances = [
+        ['alice@example.com', 'charlie@example.com', 138.0], ['eve@example.com', 'dave@example.com', 50.0], ['bob@example.com', 'dave@example.com', 40.0], ['bob@example.com', 'charlie@example.com', 2.0]
+    ]
+    time.sleep(1)
+    actual_trip_balances = get_balances("Trip", "alice@example.com")
+    assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
+
+    print("Balance verification for currency addition and expense removal: Passed")
