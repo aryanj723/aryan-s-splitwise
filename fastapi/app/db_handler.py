@@ -88,3 +88,13 @@ def remove_group_member(group_id: str, member_email: str):
 def db_delete_group(group_id: str):
     groups_collection.delete_one({"id": group_id})
     entries_collection.delete_many({"group_id": group_id})
+
+def mark_entry_cancelled(group_id: str, entry_index: int):
+    result = groups_collection.update_one(
+        {"id": group_id},
+        {"$set": {f"entries.{entry_index}.cancelled": True}}
+    )
+    if result.modified_count > 0:
+        logger.info(f"Marked entry {entry_index} as cancelled in group {group_id}")
+    else:
+        logger.warning(f"Failed to mark entry {entry_index} as cancelled in group {group_id}")

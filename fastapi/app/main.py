@@ -170,7 +170,7 @@ async def delete_group(background_tasks: BackgroundTasks, request: GroupNameRequ
 
 @app.post("/groups/add_user")
 async def add_user_to_group(request: AddUserRequest, background_tasks: BackgroundTasks):
-    group = await crud.get_group_details_by_name(request.group_name, request.member_email)
+    group = crud.get_group_details_by_name(request.group_name, request.member_email)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found or member does not belong to the group")
     

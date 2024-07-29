@@ -76,6 +76,21 @@ def call_remove_expense(group_name, member_email, expense_index):
     requests.post(url, json=payload, headers=headers)
     print(f"Expense index {expense_index} removal from group {group_name} by {member_email}: API called")
 
+def call_add_user(group_name, member_email, new_member_email):
+    url = f"{BASE_URL}/groups/add_user"
+    payload = {
+        "group_name": group_name,
+        "member_email": member_email,
+        "new_member_email": new_member_email
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    print(f"User {new_member_email} addition to group {group_name} by {member_email}: API called with status code {response.status_code}")
+    print(response.text)
+
 def get_group_id(name, email, retries=10, delay=1):
     url = f"{BASE_URL}/groups/get_group_details"
     payload = {
@@ -348,3 +363,34 @@ if __name__ == "__main__":
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
 
     print("Balance verification for currency addition and expense removal: Passed")
+
+    # Add new tests for adding a user to a group
+    call_add_user("Trip", "alice@example.com", "new_member@example.com")
+
+    # Verifying the user is added by attempting to add an expense for the new user
+    call_add_expense("Trip", "new_member@example.com", {
+        "description": "New Member's Expense",
+        "amount": 100,
+        "paid_by": "new_member@example.com",
+        "shares": {
+            "alice@example.com": 20,
+            "bob@example.com": 20,
+            "charlie@example.com": 20,
+            "dave@example.com": 20,
+            "eve@example.com": 20
+        },
+        "currency": "USD"
+    })
+
+    expected_trip_balances = [
+         ['alice@example.com', 'charlie@example.com', 120.0],
+         ['eve@example.com', 'new_member@example.com', 70.0],
+         ['bob@example.com', 'dave@example.com', 62.0],
+         ['alice@example.com', 'new_member@example.com', 30.0],
+         ['alice@example.com', 'dave@example.com', 8.0]
+    ]
+    time.sleep(2)
+    actual_trip_balances = get_balances("Trip", "alice@example.com")
+    assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
+
+    print("Balance verification for adding user to group: Passed")

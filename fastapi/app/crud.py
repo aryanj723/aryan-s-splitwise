@@ -12,8 +12,7 @@ from app.db_handler import (
     get_group_details as db_get_group_details,
     update_group_balances,
     append_group_entry,
-    remove_group_member,
-    add_group_member,
+    mark_entry_cancelled,
     get_group_lock,
     release_group_lock,
     update_group_data
@@ -171,7 +170,7 @@ def remove_expense(group_id: str, expense_index: int, cancelled_by: str):
             return None
 
         # Mark the expense as cancelled and save to DB
-        group.entries[expense_index-1].cancelled = True
+        mark_entry_cancelled(group_id, expense_index - 1)
         
         calcellation_entry = Expense(
             type="expense",
@@ -182,7 +181,7 @@ def remove_expense(group_id: str, expense_index: int, cancelled_by: str):
             shares={},
             date=str(datetime.now()),
             added_by=cancelled_by,
-            cancelled=True
+            cancelled=False
         )
         append_group_entry(group_id, calcellation_entry.dict())
 
@@ -313,7 +312,7 @@ def delete_group(group_name: str, user_email: str):
     
     try:
         # Remove user from group members
-        remove_group_member(group_id, user_email)
+        #remove_group_member(group_id, user_email)
 
         # Remove group from user's document
         user_data = db_load_user_data(user_email)
@@ -329,5 +328,30 @@ def delete_group(group_name: str, user_email: str):
         release_group_lock(group_id)
 
 def add_user_to_group(group_id: str, new_member_email: str):
-    add_group_member(group_id, new_member_email)
-    logger.info(f"User {new_member_email} added to group {group_id}")
+    if not get_group_lock(group_id):
+        logger.error(f"Adding user failed Could not acquire lock for group {group_id}.")
+        return
+    
+    try:
+        group_data = db_get_group_details(group_id)
+        group = Group(**group_data)
+        if new_member_email in group.members:
+            logger.warning(f"User {new_member_email} is already a member of group {group_id}")
+            return
+        
+        # Add new member to the group
+        group.members.append(new_member_email)
+        update_group_data(group_id, {"members": group.members})
+        logger.info(f"User {new_member_email} added to group {group_id}")
+
+        # Ensure the user exists in the user collection
+        user_data = db_load_user_data(new_member_email)
+        if "groups" not in user_data:
+            user_data["groups"] = []
+        if group_id not in user_data["groups"]:
+            user_data["groups"].append(group_id)
+        db_save_user_data(user_data)
+        logger.info(f"User {new_member_email} updated with group {group_id}")
+    
+    finally:
+        release_group_lock(group_id)
