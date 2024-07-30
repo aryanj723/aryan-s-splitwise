@@ -140,7 +140,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_add_expense("Trip", "bobi@example.com", {
         "description": "Food",
         "amount": 100,
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_create_group("Trip", "alice@example.com", ["bob@example.com", "charlie@example.com", "dave@example.com", "eve@example.com"], "USD")
 
     call_add_expense("Dinner", "charl@example.com", {
@@ -164,7 +164,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_add_expense("Trip", "alice@example.com", {
         "description": "Hotel",
         "amount": 500,
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_add_expense("Trip", "bob@example.com", {
         "description": "Food",
         "amount": 200,
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_add_expense("Trip", "charlie@example.com", {
         "description": "Transport",
         "amount": 300,
@@ -206,6 +206,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
+    time.sleep(2)
     call_add_payment("Trip", "charlie@example.com", {
         "description": "Payment to Dave",
         "amount": 50,
@@ -213,7 +214,7 @@ if __name__ == "__main__":
         "paid_to": "dave@example.com",
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_add_expense("Dinner", "dav@example.com", {
         "description": "Drinks",
         "amount": 30,
@@ -224,7 +225,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_add_payment("Trip", "bobi@example.com", {
         "description": "Payment to Ali",
         "amount": 50,
@@ -232,6 +233,7 @@ if __name__ == "__main__":
         "paid_to": "ali@example.com",
         "currency": "USD"
     })
+    time.sleep(2)
     call_add_payment("Dinner", "dav@example.com", {
         "description": "Payment to Charl",
         "amount": 20,
@@ -241,6 +243,7 @@ if __name__ == "__main__":
     })
 
     trip_group_id = get_group_id("Trip", "ali@example.com")
+    time.sleep(2)
     dinner_group_id = get_group_id("Dinner", "charl@example.com")
 
     expected_trip_balances = []
@@ -250,7 +253,7 @@ if __name__ == "__main__":
     time.sleep(2)
     actual_trip_balances = get_balances("Trip", "ali@example.com")
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
-
+    time.sleep(2)
     actual_dinner_balances = get_balances("Dinner", "charl@example.com")
     assert sorted(actual_dinner_balances) == sorted(expected_dinner_balances), f"Expected {expected_dinner_balances} but got {actual_dinner_balances}"
 
@@ -270,7 +273,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_add_expense("Trip", "eve@example.com", {
         "description": "Miscellaneous",
         "amount": 150,
@@ -284,7 +287,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-
+    time.sleep(2)
     call_add_payment("Trip", "bob@example.com", {
         "description": "Payment to Alice",
         "amount": 60,
@@ -292,6 +295,7 @@ if __name__ == "__main__":
         "paid_to": "alice@example.com",
         "currency": "USD"
     })
+    time.sleep(2)
     call_add_payment("Trip", "dave@example.com", {
         "description": "Payment to Eve",
         "amount": 70,
@@ -299,6 +303,7 @@ if __name__ == "__main__":
         "paid_to": "eve@example.com",
         "currency": "USD"
     })
+    time.sleep(2)
     call_add_payment("Trip", "eve@example.com", {
         "description": "Payment to Bob",
         "amount": 50,
@@ -306,6 +311,7 @@ if __name__ == "__main__":
         "paid_to": "bob@example.com",
         "currency": "USD"
     })
+    time.sleep(2)
     call_add_payment("Trip", "alice@example.com", {
         "description": "Payment to Charlie",
         "amount": 30,
@@ -313,7 +319,7 @@ if __name__ == "__main__":
         "paid_to": "charlie@example.com",
         "currency": "USD"
     })
-
+    time.sleep(2)
     trip_group_id = get_group_id("Trip", "alice@example.com")
 
     expected_trip_balances = [
@@ -331,7 +337,7 @@ if __name__ == "__main__":
     # Add new tests for currency addition and expense removal
 
     call_add_currency("Trip", "alice@example.com", "EUR", 1.2)
-
+    time.sleep(2)
     call_add_expense("Trip", "alice@example.com", {
         "description": "Hotel in EUR",
         "amount": 100,
@@ -349,24 +355,24 @@ if __name__ == "__main__":
         ["bob@example.com", "charlie@example.com", 30.0],
         ["dave@example.com", "charlie@example.com", 10.0]
     ]
-
+    time.sleep(2)
     actual_trip_balances = get_balances("Trip", "alice@example.com")
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
-
+    time.sleep(2)
     call_remove_expense("Trip", "alice@example.com", 1)  # Assuming the index of "Hotel in EUR" expense is 1
 
     expected_trip_balances = [
         ['alice@example.com', 'charlie@example.com', 138.0], ['eve@example.com', 'dave@example.com', 50.0], ['bob@example.com', 'dave@example.com', 40.0], ['bob@example.com', 'charlie@example.com', 2.0]
     ]
-    time.sleep(1)
+    time.sleep(2)
     actual_trip_balances = get_balances("Trip", "alice@example.com")
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
 
     print("Balance verification for currency addition and expense removal: Passed")
-
+    time.sleep(2)
     # Add new tests for adding a user to a group
     call_add_user("Trip", "alice@example.com", "new_member@example.com")
-
+    time.sleep(2)
     # Verifying the user is added by attempting to add an expense for the new user
     call_add_expense("Trip", "new_member@example.com", {
         "description": "New Member's Expense",

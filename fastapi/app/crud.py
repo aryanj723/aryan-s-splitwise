@@ -15,7 +15,8 @@ from app.db_handler import (
     mark_entry_cancelled,
     get_group_lock,
     release_group_lock,
-    update_group_data
+    update_group_data,
+    group_locks
 )
 
 def create_group(name: str, creator_email: str, members: List[str], local_currency: str) -> Group:
@@ -78,11 +79,7 @@ def get_group_details_by_name(name: str, email: str) -> Group:
     return found_group
 
 def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: str) -> Expense:
-    if not get_group_lock(group_id):
-        logger.error(f"Adding expense failed: Could not acquire lock for group {group_id}.")
-        return None
-    
-    try:
+    with group_locks[group_id]:
         group = get_group_details(group_id)
         if not group:
             logger.error(f"Adding expense failed: Group {group_id} not found.")
@@ -105,6 +102,11 @@ def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: st
         
         append_group_entry(group_id, expense.dict())
 
+    if not get_group_lock(group_id):
+        logger.error(f"Adding expense failed: Could not acquire lock for group {group_id}.")
+        return None
+    
+    try:
         # Update balances in-memory
         update_balances(group, expense)
 
@@ -115,11 +117,7 @@ def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: st
         release_group_lock(group_id)
 
 def add_payment(group_id: str, payment_data: schemas.PaymentCreate, added_by: str) -> Payment:
-    if not get_group_lock(group_id):
-        logger.error(f"Adding payment failed: Could not acquire lock for group {group_id}.")
-        return None
-    
-    try:
+    with group_locks[group_id]:
         group = get_group_details(group_id)
         if not group:
             logger.error(f"Adding payment failed: Group {group_id} not found.")
@@ -138,7 +136,11 @@ def add_payment(group_id: str, payment_data: schemas.PaymentCreate, added_by: st
         )
         
         append_group_entry(group_id, payment.dict())
-
+    if not get_group_lock(group_id):
+        logger.error(f"Adding payment failed: Could not acquire lock for group {group_id}.")
+        return None
+    
+    try:
         # Update balances in-memory
         update_balances(group, payment)
 

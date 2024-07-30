@@ -2,12 +2,19 @@ from fastapi import FastAPI, HTTPException, Body, BackgroundTasks
 from pydantic import BaseModel
 from app import crud, schemas
 from app.logging_config import logger
+from app.session_manager import session_manager  # Ensure session_manager is imported
 
 app = FastAPI()
 
 @app.on_event("startup")
-def on_startup():
-    logger.info("Application startup: initializing the system.")
+async def startup_event():
+    # Initialize the session manager
+    _ = session_manager
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    # End the session on shutdown
+    session_manager.end_session()
 
 class AddExpenseRequest(BaseModel):
     name: str
