@@ -15,8 +15,7 @@ from app.db_handler import (
     mark_entry_cancelled,
     get_group_lock,
     release_group_lock,
-    update_group_data,
-    group_locks
+    update_group_data
 )
 
 def create_group(name: str, creator_email: str, members: List[str], local_currency: str) -> Group:
@@ -79,7 +78,11 @@ def get_group_details_by_name(name: str, email: str) -> Group:
     return found_group
 
 def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: str) -> Expense:
-    with group_locks[group_id]:
+    if not get_group_lock(group_id):
+        logger.error(f"Adding expense failed: Could not acquire lock for group {group_id}.")
+        return None
+    
+    try:
         group = get_group_details(group_id)
         if not group:
             logger.error(f"Adding expense failed: Group {group_id} not found.")
@@ -101,12 +104,6 @@ def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: st
         )
         
         append_group_entry(group_id, expense.dict())
-
-    if not get_group_lock(group_id):
-        logger.error(f"Adding expense failed: Could not acquire lock for group {group_id}.")
-        return None
-    
-    try:
         # Update balances in-memory
         update_balances(group, expense)
 
@@ -117,7 +114,11 @@ def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: st
         release_group_lock(group_id)
 
 def add_payment(group_id: str, payment_data: schemas.PaymentCreate, added_by: str) -> Payment:
-    with group_locks[group_id]:
+    if not get_group_lock(group_id):
+        logger.error(f"Adding payment failed: Could not acquire lock for group {group_id}.")
+        return None
+    
+    try:
         group = get_group_details(group_id)
         if not group:
             logger.error(f"Adding payment failed: Group {group_id} not found.")
@@ -136,11 +137,6 @@ def add_payment(group_id: str, payment_data: schemas.PaymentCreate, added_by: st
         )
         
         append_group_entry(group_id, payment.dict())
-    if not get_group_lock(group_id):
-        logger.error(f"Adding payment failed: Could not acquire lock for group {group_id}.")
-        return None
-    
-    try:
         # Update balances in-memory
         update_balances(group, payment)
 
@@ -308,28 +304,36 @@ def delete_group(group_name: str, user_email: str):
         return
 
     group_id = group.id
-    if not get_group_lock(group_id):
-        logger.error(f"Deleting group failed: Could not acquire lock for group {group_id}.")
-        return
+    user_data = db_load_user_data(user_email)
+    user_data["groups"].remove(group_id)
+    db_save_user_data(user_data)
+    # if not get_group_lock(group_id):
+    #     logger.error(f"Deleting group failed: Could not acquire lock for group {group_id}.")
+    #     return
     
-    try:
+    # try:
         # Remove user from group members
         #remove_group_member(group_id, user_email)
 
         # Remove group from user's document
-        user_data = db_load_user_data(user_email)
-        user_data["groups"].remove(group_id)
-        db_save_user_data(user_data)
 
         # If no members left in group, delete the group document
         # if not group.members:
         #     logger.info(f"Deleting group {group_name} as it has no members left.")
         #     db_delete_group(group_id)
     
-    finally:
-        release_group_lock(group_id)
+    # finally:
+    #     release_group_lock(group_id)
 
 def add_user_to_group(group_id: str, new_member_email: str):
+    # Ensure the user exists in the user collection
+    user_data = db_load_user_data(new_member_email)
+    if "groups" not in user_data:
+        user_data["groups"] = []
+    if group_id not in user_data["groups"]:
+        user_data["groups"].append(group_id)
+    db_save_user_data(user_data)
+
     if not get_group_lock(group_id):
         logger.error(f"Adding user failed Could not acquire lock for group {group_id}.")
         return
@@ -346,13 +350,6 @@ def add_user_to_group(group_id: str, new_member_email: str):
         update_group_data(group_id, {"members": group.members})
         logger.info(f"User {new_member_email} added to group {group_id}")
 
-        # Ensure the user exists in the user collection
-        user_data = db_load_user_data(new_member_email)
-        if "groups" not in user_data:
-            user_data["groups"] = []
-        if group_id not in user_data["groups"]:
-            user_data["groups"].append(group_id)
-        db_save_user_data(user_data)
         logger.info(f"User {new_member_email} updated with group {group_id}")
     
     finally:

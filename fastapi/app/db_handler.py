@@ -37,7 +37,7 @@ def get_group_lock(group_id: str, timeout: int = 5) -> bool:
                 logger.info(f"Lock acquired for group {group_id}")
                 return True
             logger.info(f"Failed to acquire lock for {group_id}..  retrying")
-        time.sleep(0.5)
+        time.sleep(1)
     logger.warning(f"Could not acquire lock for group {group_id} within timeout")
     return False
 
