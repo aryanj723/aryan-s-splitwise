@@ -100,11 +100,7 @@ async def add_expense(background_tasks: BackgroundTasks, add_expense_request: Ad
         raise HTTPException(status_code=400, detail="Shares do not sum up to the total amount.")
 
     def add_expense_task():
-        group = crud.get_group_details_by_name(add_expense_request.name, add_expense_request.email)
-        if not group:
-            logger.error(f"Adding expense failed: Group {add_expense_request.name} not found for user {add_expense_request.email}")
-            return
-        crud.add_expense(group.id, add_expense_request.expense, add_expense_request.email)
+        crud.add_expense(add_expense_request.name, add_expense_request.email, add_expense_request.expense)
 
     background_tasks.add_task(add_expense_task)
     return {"message": "Success"}
@@ -114,12 +110,7 @@ async def remove_expense(background_tasks: BackgroundTasks, remove_expense_reque
     logger.info(f"Received request to remove expense {remove_expense_request.expense_index} from group {remove_expense_request.group_name} by {remove_expense_request.member_email}")
 
     def remove_expense_task():
-        group = crud.get_group_details_by_name(remove_expense_request.group_name, remove_expense_request.member_email)
-        if not group:
-            logger.error(f"Removing expense failed: Group {remove_expense_request.group_name} not found for user {remove_expense_request.member_email}")
-            return
-         
-        crud.remove_expense(group.id, remove_expense_request.expense_index, remove_expense_request.member_email)
+        crud.remove_expense(remove_expense_request.group_name, remove_expense_request.member_email, remove_expense_request.expense_index -1)
 
     background_tasks.add_task(remove_expense_task)
     return {"message": "Expense removal is successful"}
@@ -130,15 +121,10 @@ async def add_payment(background_tasks: BackgroundTasks, add_payment_request: Ad
     logger.info(f"Received request to add payment to group {add_payment_request.name} for user {add_payment_request.email}: {add_payment_request.payment}")
 
     def add_payment_task():
-        group = crud.get_group_details_by_name(add_payment_request.name, add_payment_request.email)
-        if not group:
-            logger.error(f"Adding payment failed: Group {add_payment_request.name} not found for user {add_payment_request.email}")
-            return
-        crud.add_payment(group.id, add_payment_request.payment, add_payment_request.email)
+        crud.add_payment(add_payment_request.name, add_payment_request.email, add_payment_request.payment)
 
     background_tasks.add_task(add_payment_task)
     return {"message": "Success"}
-
 
 @app.post("/groups/get_group_details")
 async def get_group_details(request: GroupNameRequest = Body(...)):

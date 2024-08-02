@@ -142,3 +142,43 @@ def mark_entry_cancelled(group_id: str, entry_index: int, session: ClientSession
         logger.info(f"Marked entry {entry_index} as cancelled in group {group_id}")
     else:
         logger.warning(f"Failed to mark entry {entry_index} as cancelled in group {group_id}")
+
+@retry(retry_on_exception=retry_if_pymongo_error, stop_max_attempt_number=3, wait_fixed=1000)
+def get_group_minimal_details(group_id: str) -> dict:
+    group_data = groups_collection.find_one(
+        {"id": group_id},
+        {"_id": 0, "name": 1, "members": 1, "balances": 1, "currency_conversion_rates": 1},
+        session=session_manager.session
+    )
+    if not group_data:
+        logger.error(f"Group minimal details not found: {group_id}")
+        return None
+    return group_data
+
+@retry(retry_on_exception=retry_if_pymongo_error, stop_max_attempt_number=3, wait_fixed=1000)
+def get_group_id_by_name(group_name: str, email: str) -> str:
+    user_data = users_collection.find_one({"email": email}, {"_id": 0, "groups": 1}, session=session_manager.session)
+    if not user_data or "groups" not in user_data:
+        logger.error(f"User {email} not found or user has no groups.")
+        return None
+
+    for group_id in user_data["groups"]:
+        group_data = groups_collection.find_one({"id": group_id, "name": group_name}, {"_id": 0, "id": 1}, session=session_manager.session)
+        if group_data:
+            return group_data["id"]
+
+    logger.error(f"Group {group_name} not found for user {email}")
+    return None
+
+@retry(retry_on_exception=retry_if_pymongo_error, stop_max_attempt_number=3, wait_fixed=1000)
+def get_entry_by_index(group_id: str, entry_index: int) -> dict:
+    pipeline = [
+        {"$match": {"id": group_id}},
+        {"$project": {"entry": {"$arrayElemAt": ["$entries", entry_index]}}}
+    ]
+    result = list(groups_collection.aggregate(pipeline, session=session_manager.session))
+    if not result or "entry" not in result[0]:
+        logger.error(f"Entry {entry_index} not found for group {group_id}")
+        return None
+    return result[0]["entry"]
+

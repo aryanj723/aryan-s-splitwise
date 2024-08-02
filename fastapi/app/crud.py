@@ -10,12 +10,15 @@ from app.db_handler import (
     save_user_data as db_save_user_data,
     save_group as db_save_group,
     get_group_details as db_get_group_details,
+    get_group_minimal_details as db_get_group_minimal_details,
+    get_group_id_by_name as db_get_group_id_by_name,
     update_group_balances,
     append_group_entry,
     mark_entry_cancelled,
     get_group_lock,
     release_group_lock,
-    update_group_data
+    update_group_data,
+    get_entry_by_index as db_get_entry_by_index
 )
 
 def create_group(name: str, creator_email: str, members: List[str], local_currency: str) -> Group:
@@ -40,13 +43,13 @@ def add_currency(group_id: str, currency: str, conversion_rate: float):
         return None
     
     try:
-        group = get_group_details(group_id)
+        group = db_get_group_minimal_details(group_id)
         if not group:
             logger.error(f"Adding currency failed: Group {group_id} not found.")
             return None
 
-        group.currency_conversion_rates[currency] = conversion_rate
-        update_group_data(group_id, {"currency_conversion_rates": group.currency_conversion_rates})
+        group["currency_conversion_rates"][currency] = conversion_rate
+        update_group_data(group_id, {"currency_conversion_rates": group["currency_conversion_rates"]})
     
     finally:
         release_group_lock(group_id)
@@ -57,6 +60,13 @@ def get_group_details(group_id: str) -> Group:
         logger.error(f"Group not found: {group_id}")
         return None
     return Group(**group_data)
+
+def get_group_minimal_details(group_id: str) -> dict:
+    group_data = db_get_group_minimal_details(group_id)
+    if not group_data:
+        logger.error(f"Group minimal details not found: {group_id}")
+        return None
+    return group_data
 
 def get_group_details_by_name(name: str, email: str) -> Group:
     user_data = db_load_user_data(email)
@@ -77,13 +87,18 @@ def get_group_details_by_name(name: str, email: str) -> Group:
         logger.error(f"Group not found: {name} for user {email}")
     return found_group
 
-def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: str) -> Expense:
+def add_expense(group_name: str, email: str, expense_data: schemas.ExpenseCreate) -> Expense:
+    group_id = db_get_group_id_by_name(group_name, email)
+    if not group_id:
+        logger.error(f"Adding expense failed: Group {group_name} not found for user {email}.")
+        return None
+
     if not get_group_lock(group_id):
         logger.error(f"Adding expense failed: Could not acquire lock for group {group_id}.")
         return None
     
     try:
-        group = get_group_details(group_id)
+        group = db_get_group_minimal_details(group_id)
         if not group:
             logger.error(f"Adding expense failed: Group {group_id} not found.")
             return None
@@ -99,7 +114,7 @@ def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: st
             paid_by=expense_data.paid_by,
             shares=filtered_shares,
             date=str(datetime.now()),
-            added_by=added_by,
+            added_by=email,
             cancelled=False
         )
         
@@ -108,18 +123,23 @@ def add_expense(group_id: str, expense_data: schemas.ExpenseCreate, added_by: st
         update_balances(group, expense)
 
         # Save the updated balances only
-        update_group_balances(group_id, group.balances)
+        update_group_balances(group_id, group["balances"])
         logger.info("Updated balances after adding expense")
     finally:
         release_group_lock(group_id)
 
-def add_payment(group_id: str, payment_data: schemas.PaymentCreate, added_by: str) -> Payment:
+def add_payment(group_name: str, email: str, payment_data: schemas.PaymentCreate) -> Payment:
+    group_id = db_get_group_id_by_name(group_name, email)
+    if not group_id:
+        logger.error(f"Adding payment failed: Group {group_name} not found for user {email}.")
+        return None
+
     if not get_group_lock(group_id):
         logger.error(f"Adding payment failed: Could not acquire lock for group {group_id}.")
         return None
     
     try:
-        group = get_group_details(group_id)
+        group = db_get_group_minimal_details(group_id)
         if not group:
             logger.error(f"Adding payment failed: Group {group_id} not found.")
             return None
@@ -132,7 +152,7 @@ def add_payment(group_id: str, payment_data: schemas.PaymentCreate, added_by: st
             paid_by=payment_data.paid_by,
             paid_to=payment_data.paid_to,
             date=str(datetime.now()),
-            added_by=added_by,
+            added_by=email,
             cancelled=False
         )
         
@@ -141,73 +161,69 @@ def add_payment(group_id: str, payment_data: schemas.PaymentCreate, added_by: st
         update_balances(group, payment)
 
         # Save the updated balances only
-        update_group_balances(group_id, group.balances)
+        update_group_balances(group_id, group["balances"])
         logger.info("Updated balances after adding payment")
     finally:
         release_group_lock(group_id)
 
-def remove_expense(group_id: str, expense_index: int, cancelled_by: str):
+def remove_expense(group_name: str, email: str, expense_index: int):
+    group_id = db_get_group_id_by_name(group_name, email)
+    if not group_id:
+        logger.error(f"Removing expense failed: Group {group_name} not found for user {email}.")
+        return None
+
     if not get_group_lock(group_id):
         logger.error(f"Removing expense failed: Could not acquire lock for group {group_id}.")
         return None
     
     try:
-        group = get_group_details(group_id)
-        if not group:
-            logger.error(f"Removing expense failed: Group {group_id} not found.")
+        entry = db_get_entry_by_index(group_id, expense_index)
+        if not entry:
+            logger.error(f"Removing expense failed: Entry {expense_index} not found.")
             return None
 
-        if expense_index >= len(group.entries):
-            logger.error(f"Removing expense failed: Expense index {expense_index} out of range.")
-            return None
-
-        expense = group.entries[expense_index-1]
-        logger.info(f"Removing expense {expense} from group")
-        if expense.cancelled:
-            logger.error(f"Removing expense failed: Expense {expense_index} already cancelled.")
+        if entry["cancelled"]:
+            logger.error(f"Removing expense failed: Entry {expense_index} already cancelled.")
             return None
 
         # Mark the expense as cancelled and save to DB
-        mark_entry_cancelled(group_id, expense_index - 1)
+        mark_entry_cancelled(group_id, expense_index)
         
-        calcellation_entry = Expense(
+        cancellation_entry = Expense(
             type="expense",
-            description=f"Expense entry {expense_index} was cancelled",
+            description=f"Entry {expense_index} was cancelled",
             amount=0,
             currency="N.A",
             paid_by="",
             shares={},
             date=str(datetime.now()),
-            added_by=cancelled_by,
+            added_by=email,
             cancelled=False
         )
-        append_group_entry(group_id, calcellation_entry.dict())
+        append_group_entry(group_id, cancellation_entry.dict())
 
         # Revert the cancelled expense's impact on balances
-        revert_expense_balances(group, expense)
-
-        # Save the updated entries and balances
-        update_group_balances(group_id, group.balances)
+        revert_expense_balances(group_id, entry)
     
     finally:
         release_group_lock(group_id)
 
-
-def revert_expense_balances(group, expense):
-    if expense.type != "expense":
+def revert_expense_balances(group_id: str, expense: dict):
+    group = db_get_group_minimal_details(group_id)
+    if expense["type"] != "expense":
         raise ValueError("Only expenses can be reverted")
 
     transactions = []
 
     # Add all existing balances to transactions
-    for balance in group.balances:
+    for balance in group["balances"]:
         transactions.append((balance[1], balance[0], balance[2]))
 
     # Revert the cancelled expense's impact
-    payer = expense.paid_by
-    shares = expense.shares
-    expense_currency = expense.currency
-    conversion_rate = group.currency_conversion_rates.get(expense_currency, 1)  # Default to 1 if no rate is found
+    payer = expense["paid_by"]
+    shares = expense["shares"]
+    expense_currency = expense["currency"]
+    conversion_rate = group["currency_conversion_rates"].get(expense_currency, 1)  # Default to 1 if no rate is found
 
     for member, share in shares.items():
         if member != payer:
@@ -217,13 +233,14 @@ def revert_expense_balances(group, expense):
 
     # Simplify debts to update balances
     simplified_balances = simplify_debts(transactions)
-    group.balances = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
+    group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
+    update_group_balances(group_id, group["balances"])
 
 def update_balances(group: Group, new_entry: Union[Expense, Payment, None] = None):
     transactions = []
 
     # Add all existing balances
-    for balance in group.balances:
+    for balance in group["balances"]:
         transactions.append((balance[1], balance[0], balance[2]))
 
     # Add new entry if provided
@@ -234,20 +251,20 @@ def update_balances(group: Group, new_entry: Union[Expense, Payment, None] = Non
             for member, share in shares.items():
                 if member != payer:
                     # Convert shares to local currency
-                    conversion_rate = group.currency_conversion_rates.get(new_entry.currency, 1)
+                    conversion_rate = group["currency_conversion_rates"].get(new_entry.currency, 1)
                     transactions.append((payer, member, share * conversion_rate))
         elif new_entry.type == "settlement":
             payer = new_entry.paid_by
             payee = new_entry.paid_to
             amount = new_entry.amount
             # Convert amount to local currency
-            conversion_rate = group.currency_conversion_rates.get(new_entry.currency, 1)
+            conversion_rate = group["currency_conversion_rates"].get(new_entry.currency, 1)
             transactions.append((payer, payee, amount * conversion_rate))
 
     # Simplify debts
     simplified_balances = simplify_debts(transactions)
 
-    group.balances = [[payer, payee, amount] for payer, payee, amount in simplified_balances]  # Write in correct order
+    group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]  # Write in correct order
 
 def simplify_debts(transactions):
     # Step 1: Calculate net balances
@@ -284,17 +301,16 @@ def simplify_debts(transactions):
             heapq.heappush(debtors, (new_debt_balance, debtor))
         if new_credit_balance > 0:
             heapq.heappush(creditors, (-new_credit_balance, creditor))
-
+    logger.info("Simplification completed")
     return simplified_transactions
 
 def get_groups_by_user_email(email: str) -> List[str]:
     user_data = db_load_user_data(email)
     group_names = []
     for group_id in user_data.get("groups", []):
-        group_data = db_get_group_details(group_id)
+        group_data = db_get_group_minimal_details(group_id)
         if group_data:
-            group = Group(**group_data)
-            group_names.append(group.name)
+            group_names.append(group_data["name"])
     return group_names
 
 def delete_group(group_name: str, user_email: str):
@@ -307,23 +323,6 @@ def delete_group(group_name: str, user_email: str):
     user_data = db_load_user_data(user_email)
     user_data["groups"].remove(group_id)
     db_save_user_data(user_data)
-    # if not get_group_lock(group_id):
-    #     logger.error(f"Deleting group failed: Could not acquire lock for group {group_id}.")
-    #     return
-    
-    # try:
-        # Remove user from group members
-        #remove_group_member(group_id, user_email)
-
-        # Remove group from user's document
-
-        # If no members left in group, delete the group document
-        # if not group.members:
-        #     logger.info(f"Deleting group {group_name} as it has no members left.")
-        #     db_delete_group(group_id)
-    
-    # finally:
-    #     release_group_lock(group_id)
 
 def add_user_to_group(group_id: str, new_member_email: str):
     # Ensure the user exists in the user collection
@@ -339,15 +338,14 @@ def add_user_to_group(group_id: str, new_member_email: str):
         return
     
     try:
-        group_data = db_get_group_details(group_id)
-        group = Group(**group_data)
-        if new_member_email in group.members:
+        group = db_get_group_minimal_details(group_id)
+        if new_member_email in group["members"]:
             logger.warning(f"User {new_member_email} is already a member of group {group_id}")
             return
         
         # Add new member to the group
-        group.members.append(new_member_email)
-        update_group_data(group_id, {"members": group.members})
+        group["members"].append(new_member_email)
+        update_group_data(group_id, {"members": group["members"]})
         logger.info(f"User {new_member_email} added to group {group_id}")
 
         logger.info(f"User {new_member_email} updated with group {group_id}")
