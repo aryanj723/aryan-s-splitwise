@@ -147,13 +147,14 @@ def mark_entry_cancelled(group_id: str, entry_index: int, session: ClientSession
 def get_group_minimal_details(group_id: str) -> dict:
     group_data = groups_collection.find_one(
         {"id": group_id},
-        {"_id": 0, "name": 1, "members": 1, "balances": 1, "currency_conversion_rates": 1},
+        {"_id": 0, "name": 1, "members": 1, "balances": 1, "currency_conversion_rates": 1, "spends": 1},
         session=session_manager.session
     )
     if not group_data:
         logger.error(f"Group minimal details not found: {group_id}")
         return None
     return group_data
+
 
 @retry(retry_on_exception=retry_if_pymongo_error, stop_max_attempt_number=3, wait_fixed=1000)
 def get_group_id_by_name(group_name: str, email: str) -> str:

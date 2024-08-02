@@ -26,4 +26,6 @@ class Group(BaseModel):
     balances: List[List[Union[str, float]]] = []
     local_currency: str
     currency_conversion_rates: Dict[str, float] = {}
-    locked: bool = False 
+    locked: bool = False
+    spends: List[Dict[str, Union[str, float]]] = []  # Add spends array
+

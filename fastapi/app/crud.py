@@ -96,15 +96,15 @@ def add_expense(group_name: str, email: str, expense_data: schemas.ExpenseCreate
     if not get_group_lock(group_id):
         logger.error(f"Adding expense failed: Could not acquire lock for group {group_id}.")
         return None
-    
+
     try:
         group = db_get_group_minimal_details(group_id)
         if not group:
             logger.error(f"Adding expense failed: Group {group_id} not found.")
             return None
 
-        # Filter out zero shares
-        filtered_shares = {k: v for k, v in expense_data.shares.items() if v != 0}
+        # Calculate total amount spent in local currency
+        conversion_rate = group["currency_conversion_rates"].get(expense_data.currency, 1)
 
         expense = Expense(
             type="expense",
@@ -112,17 +112,26 @@ def add_expense(group_name: str, email: str, expense_data: schemas.ExpenseCreate
             amount=expense_data.amount,
             currency=expense_data.currency,
             paid_by=expense_data.paid_by,
-            shares=filtered_shares,
+            shares=expense_data.shares,
             date=str(datetime.now()),
             added_by=email,
             cancelled=False
         )
-        
-        append_group_entry(group_id, expense.dict())
-        # Update balances in-memory
-        update_balances(group, expense)
 
-        # Save the updated balances only
+        append_group_entry(group_id, expense.dict())
+
+        # Update spends
+        for member, share in expense_data.shares.items():
+            share_in_local_currency = share * conversion_rate
+            for spend in group["spends"]:
+                if spend["member"] == member:
+                    spend["amount"] += share_in_local_currency
+                    break
+            else:
+                group["spends"].append({"member": member, "amount": share_in_local_currency})
+
+        update_group_data(group_id, {"spends": group["spends"]})
+        update_balances(group, expense)
         update_group_balances(group_id, group["balances"])
         logger.info("Updated balances after adding expense")
     finally:
@@ -175,7 +184,7 @@ def remove_expense(group_name: str, email: str, expense_index: int):
     if not get_group_lock(group_id):
         logger.error(f"Removing expense failed: Could not acquire lock for group {group_id}.")
         return None
-    
+
     try:
         entry = db_get_entry_by_index(group_id, expense_index)
         if not entry:
@@ -188,7 +197,7 @@ def remove_expense(group_name: str, email: str, expense_index: int):
 
         # Mark the expense as cancelled and save to DB
         mark_entry_cancelled(group_id, expense_index)
-        
+
         cancellation_entry = Expense(
             type="expense",
             description=f"Entry {expense_index} was cancelled",
@@ -202,9 +211,20 @@ def remove_expense(group_name: str, email: str, expense_index: int):
         )
         append_group_entry(group_id, cancellation_entry.dict())
 
-        # Revert the cancelled expense's impact on balances
+        # Revert the cancelled expense's impact on spends
+        group = db_get_group_minimal_details(group_id)
+        conversion_rate = group["currency_conversion_rates"].get(entry["currency"], 1)
+
+        for member, share in entry["shares"].items():
+            share_in_local_currency = share * conversion_rate
+            for spend in group["spends"]:
+                if spend["member"] == member:
+                    spend["amount"] -= share_in_local_currency
+                    break
+
+        update_group_data(group_id, {"spends": group["spends"]})
         revert_expense_balances(group_id, entry)
-    
+
     finally:
         release_group_lock(group_id)
 
@@ -325,7 +345,6 @@ def delete_group(group_name: str, user_email: str):
     db_save_user_data(user_data)
 
 def add_user_to_group(group_id: str, new_member_email: str):
-    # Ensure the user exists in the user collection
     user_data = db_load_user_data(new_member_email)
     if "groups" not in user_data:
         user_data["groups"] = []
@@ -336,19 +355,16 @@ def add_user_to_group(group_id: str, new_member_email: str):
     if not get_group_lock(group_id):
         logger.error(f"Adding user failed Could not acquire lock for group {group_id}.")
         return
-    
+
     try:
         group = db_get_group_minimal_details(group_id)
         if new_member_email in group["members"]:
             logger.warning(f"User {new_member_email} is already a member of group {group_id}")
             return
-        
-        # Add new member to the group
-        group["members"].append(new_member_email)
-        update_group_data(group_id, {"members": group["members"]})
-        logger.info(f"User {new_member_email} added to group {group_id}")
 
-        logger.info(f"User {new_member_email} updated with group {group_id}")
-    
+        group["members"].append(new_member_email)
+        group["spends"].append({"member": new_member_email, "amount": 0.0})  # Add new member to spends
+        update_group_data(group_id, {"members": group["members"], "spends": group["spends"]})
+        logger.info(f"User {new_member_email} added to group {group_id}")
     finally:
         release_group_lock(group_id)
