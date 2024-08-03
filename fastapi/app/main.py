@@ -64,8 +64,8 @@ async def create_group(background_tasks: BackgroundTasks, group: schemas.GroupCr
         if "groups" not in user_data:
             user_data["groups"] = []
         for group_id in user_data["groups"]:
-            existing_group = crud.db_get_group_details(group_id)
-            if existing_group and existing_group.get('name') == group.name:
+            existing_group = crud.db_get_group_minimal_details(group_id)
+            if existing_group and existing_group["name"] == group.name:
                 logger.error(f"Group creation failed: Member {member} is already part of a group with the name {group.name}.")
                 raise HTTPException(status_code=400, detail="Group creation failed: One or more members are already part of a group with the same name. Please try with a different name.")
     

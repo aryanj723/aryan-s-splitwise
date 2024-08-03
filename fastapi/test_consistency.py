@@ -108,7 +108,7 @@ def get_group_id(name, email, retries=10, delay=1):
         time.sleep(delay)
     raise Exception(f"Failed to fetch group ID for {name} after {retries} retries")
 
-def get_balances(name, email, retries=10, delay=1):
+def get_balances(name, email, expected_balances=None, retries=3, delay=1):
     url = f"{BASE_URL}/groups/get_group_details"
     payload = {
         "name": name,
@@ -121,9 +121,12 @@ def get_balances(name, email, retries=10, delay=1):
     for _ in range(retries):
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code == 200:
-            return response.json()["balances"]
+            actual_balances = response.json()["balances"]
+            if expected_balances is None or sorted(actual_balances) == sorted(expected_balances):
+                return actual_balances
         time.sleep(delay)
-    raise Exception(f"Failed to fetch group ID for {name} after {retries} retries")
+        print("Incorrect balances, retrying!!!!!!!!!!!!!!!!!!!!")
+    raise Exception(f"Failed to fetch matching balances for {name} after {retries} retries")
 
 if __name__ == "__main__":
     # Create initial groups and add expenses/payments
@@ -251,10 +254,9 @@ if __name__ == "__main__":
         ["charl@example.com", "dav@example.com", 10]
     ]
     
-    actual_trip_balances = get_balances("Trip", "ali@example.com")
+    actual_trip_balances = get_balances("Trip", "ali@example.com", expected_balances=expected_trip_balances)
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
-    time.sleep(4)
-    actual_dinner_balances = get_balances("Dinner", "charl@example.com")
+    actual_dinner_balances = get_balances("Dinner", "charl@example.com", expected_balances=expected_dinner_balances)
     assert sorted(actual_dinner_balances) == sorted(expected_dinner_balances), f"Expected {expected_dinner_balances} but got {actual_dinner_balances}"
 
     print("Balance verification for initial cases: Passed")
@@ -328,8 +330,8 @@ if __name__ == "__main__":
         ["bob@example.com", "charlie@example.com", 30.0],
         ["dave@example.com", "charlie@example.com", 10.0]
     ]
-    time.sleep(4)
-    actual_trip_balances = get_balances("Trip", "alice@example.com")
+    
+    actual_trip_balances = get_balances("Trip", "alice@example.com", expected_balances=expected_trip_balances)
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
 
     print("Balance verification for additional case: Passed")
@@ -355,8 +357,8 @@ if __name__ == "__main__":
         ["bob@example.com", "charlie@example.com", 30.0],
         ["dave@example.com", "charlie@example.com", 10.0]
     ]
-    time.sleep(4)
-    actual_trip_balances = get_balances("Trip", "alice@example.com")
+    
+    actual_trip_balances = get_balances("Trip", "alice@example.com", expected_balances=expected_trip_balances)
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
     
     call_remove_expense("Trip", "alice@example.com", 1)  # Assuming the index of "Hotel in EUR" expense is 1
@@ -364,8 +366,7 @@ if __name__ == "__main__":
     expected_trip_balances = [
         ['alice@example.com', 'charlie@example.com', 138.0], ['eve@example.com', 'dave@example.com', 50.0], ['bob@example.com', 'dave@example.com', 40.0], ['bob@example.com', 'charlie@example.com', 2.0]
     ]
-    time.sleep(4)
-    actual_trip_balances = get_balances("Trip", "alice@example.com")
+    actual_trip_balances = get_balances("Trip", "alice@example.com", expected_balances=expected_trip_balances)
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
 
     print("Balance verification for currency addition and expense removal: Passed")
@@ -394,8 +395,7 @@ if __name__ == "__main__":
          ['alice@example.com', 'new_member@example.com', 30.0],
          ['alice@example.com', 'dave@example.com', 8.0]
     ]
-    time.sleep(4)
-    actual_trip_balances = get_balances("Trip", "alice@example.com")
+    actual_trip_balances = get_balances("Trip", "alice@example.com", expected_balances=expected_trip_balances)
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
 
     print("Balance verification for adding user to group: Passed")

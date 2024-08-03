@@ -159,7 +159,7 @@ def get_group_minimal_details(group_id: str) -> dict:
     return group_data
 
 @retry(retry_on_exception=retry_if_pymongo_error, stop_max_attempt_number=3, wait_fixed=1000)
-@functools.lru_cache(maxsize=10000)
+@functools.lru_cache(maxsize=1000)
 def get_group_id_by_name(group_name: str, email: str) -> str:
     user_data = users_collection.find_one({"email": email}, {"_id": 0, "groups": 1}, session=session_manager.session)
     if not user_data or "groups" not in user_data:

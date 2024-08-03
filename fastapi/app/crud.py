@@ -2,7 +2,6 @@ from typing import List, Dict, Union
 from datetime import datetime
 import uuid
 import heapq
-import threading
 from app.models import Group, Expense, Payment
 from app import schemas
 from app.logging_config import logger
@@ -53,13 +52,6 @@ def add_currency(group_id: str, currency: str, conversion_rate: float):
         update_group_data(group_id, {"currency_conversion_rates": group["currency_conversion_rates"]})
 
 
-def get_group_details(group_id: str) -> Group:
-    group_data = db_get_group_details(group_id)
-    if not group_data:
-        logger.error(f"Group not found: {group_id}")
-        return None
-    return Group(**group_data)
-
 def get_group_minimal_details(group_id: str) -> dict:
     group_data = db_get_group_minimal_details(group_id)
     if not group_data:
@@ -68,18 +60,11 @@ def get_group_minimal_details(group_id: str) -> dict:
     return group_data
 
 def get_group_details_by_name(name: str, email: str) -> Group:
-    with user_locks[email]:
-        user_data = db_load_user_data(email)
-    found_group = None
-    for group_id in user_data.get("groups", []):
-            logger.info("Getting group info now")
-            group_data = db_get_group_details(group_id)
-            if group_data and group_data.get('name') == name:
-                found_group = Group(**group_data)
-                break
-    if not found_group:
-        logger.error(f"Group not found: {name} for user {email}")
-    return found_group
+    group_id = db_get_group_id_by_name(name, email)
+    with group_locks[group_id]:
+        group_data = db_get_group_details(group_id)
+        found_group = Group(**group_data)
+        return found_group
 
 def add_expense(group_name: str, email: str, expense_data: schemas.ExpenseCreate) -> Expense:
     group_id = db_get_group_id_by_name(group_name, email)
@@ -189,129 +174,119 @@ def remove_expense(group_name: str, email: str, expense_index: int):
         )
         append_group_entry(group_id, cancellation_entry.dict())
 
-        # Revert the cancelled expense's impact on spends
+        # Revert the cancelled expense's impact on spends and balances
         group = db_get_group_minimal_details(group_id)
         conversion_rate = group["currency_conversion_rates"].get(entry["currency"], 1)
 
+        # Update spends and prepare transactions for balance update
+        transactions = []
         for member, share in entry["shares"].items():
             share_in_local_currency = share * conversion_rate
             for spend in group["spends"]:
                 if spend["member"] == member:
                     spend["amount"] -= share_in_local_currency
                     break
+            else:
+                logger.warning(f"Member {member} not found in spends array.")
+            if member != entry["paid_by"]:
+                transactions.append((member, entry["paid_by"], share_in_local_currency))
+
+        # Handle the payer's spend update
+        for spend in group["spends"]:
+            if spend["member"] == entry["paid_by"]:
+                spend["amount"] -= entry["amount"] * conversion_rate
+                break
 
         update_group_data(group_id, {"spends": group["spends"]})
-        revert_expense_balances(group_id, entry)
 
-
-def revert_expense_balances(group_id: str, expense: dict):
-    with threading.Lock():
-        group = db_get_group_minimal_details(group_id)
-        if expense["type"] != "expense":
-            raise ValueError("Only expenses can be reverted")
-
-        transactions = []
-
-        # Add all existing balances to transactions
+        # Add existing balances to transactions
         for balance in group["balances"]:
             transactions.append((balance[1], balance[0], balance[2]))
-
-        # Revert the cancelled expense's impact
-        payer = expense["paid_by"]
-        shares = expense["shares"]
-        expense_currency = expense["currency"]
-        conversion_rate = group["currency_conversion_rates"].get(expense_currency, 1)  # Default to 1 if no rate is found
-
-        for member, share in shares.items():
-            if member != payer:
-                # Convert share to local currency if necessary
-                amount_in_local_currency = share * conversion_rate
-                transactions.append((member, payer, amount_in_local_currency))
 
         # Simplify debts to update balances
         simplified_balances = simplify_debts(transactions)
         group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
         update_group_balances(group_id, group["balances"])
+        logger.info(f'Group {group_id} Balances after revert {group["balances"]}')
 
 def update_balances(group, new_entry: Union[Expense, Payment, None] = None):
-    with threading.Lock():
-        logger.info("Updating balances")
-        transactions = []
+    logger.info("Updating balances")
+    transactions = []
 
-        # Add all existing balances
-        for balance in group["balances"]:
-            transactions.append((balance[1], balance[0], balance[2]))
+    # Add all existing balances
+    for balance in group["balances"]:
+        transactions.append((balance[1], balance[0], balance[2]))
 
-        # Add new entry if provided
-        if new_entry:
-            if new_entry.type == "expense":
-                payer = new_entry.paid_by
-                shares = new_entry.shares
-                for member, share in shares.items():
-                    if member != payer:
-                        # Convert shares to local currency
-                        conversion_rate = group["currency_conversion_rates"].get(new_entry.currency, 1)
-                        transactions.append((payer, member, share * conversion_rate))
-            elif new_entry.type == "settlement":
-                payer = new_entry.paid_by
-                payee = new_entry.paid_to
-                amount = new_entry.amount
-                # Convert amount to local currency
-                conversion_rate = group["currency_conversion_rates"].get(new_entry.currency, 1)
-                transactions.append((payer, payee, amount * conversion_rate))
+    # Add new entry if provided
+    if new_entry:
+        if new_entry.type == "expense":
+            payer = new_entry.paid_by
+            shares = new_entry.shares
+            for member, share in shares.items():
+                if member != payer:
+                    # Convert shares to local currency
+                    conversion_rate = group["currency_conversion_rates"].get(new_entry.currency, 1)
+                    transactions.append((payer, member, share * conversion_rate))
+        elif new_entry.type == "settlement":
+            payer = new_entry.paid_by
+            payee = new_entry.paid_to
+            amount = new_entry.amount
+            # Convert amount to local currency
+            conversion_rate = group["currency_conversion_rates"].get(new_entry.currency, 1)
+            transactions.append((payer, payee, amount * conversion_rate))
 
-        # Simplify debts
-        simplified_balances = simplify_debts(transactions)
+    # Simplify debts
+    simplified_balances = simplify_debts(transactions)
 
-        group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
-        logger.info(f"Balances updated !") 
+    group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
+    logger.info(f"Balances updated !") 
 
 def simplify_debts(transactions):
-    with threading.Lock():
-        logger.info("Simplifying ")
-        # Step 1: Calculate net balances
-        balances = {}
-        for transaction in transactions:
-            debtor, creditor, amount = transaction
-            balances[debtor] = balances.get(debtor, 0) - amount
-            balances[creditor] = balances.get(creditor, 0) + amount
+    logger.info("Simplifying ")
+    # Step 1: Calculate net balances
+    balances = {}
+    for transaction in transactions:
+        debtor, creditor, amount = transaction
+        balances[debtor] = balances.get(debtor, 0) - amount
+        balances[creditor] = balances.get(creditor, 0) + amount
 
-        # Step 2: Separate creditors and debtors and build heaps
-        debtors = []
-        creditors = []
-        for person, balance in balances.items():
-            if balance < 0:
-                heapq.heappush(debtors, (balance, person))  # min-heap for debtors
-            elif balance > 0:
-                heapq.heappush(creditors, (-balance, person))  # max-heap for creditors (negative values to simulate max-heap)
+    # Step 2: Separate creditors and debtors and build heaps
+    debtors = []
+    creditors = []
+    for person, balance in balances.items():
+        if balance < 0:
+            heapq.heappush(debtors, (balance, person))  # min-heap for debtors
+        elif balance > 0:
+            heapq.heappush(creditors, (-balance, person))  # max-heap for creditors (negative values to simulate max-heap)
 
-        simplified_transactions = []
+    simplified_transactions = []
 
-        # Step 3: Match debts and credits
-        while debtors and creditors:
-            debt_balance, debtor = heapq.heappop(debtors)
-            credit_balance, creditor = heapq.heappop(creditors)
-            credit_balance = -credit_balance  # convert back to positive
+    # Step 3: Match debts and credits
+    while debtors and creditors:
+        debt_balance, debtor = heapq.heappop(debtors)
+        credit_balance, creditor = heapq.heappop(creditors)
+        credit_balance = -credit_balance  # convert back to positive
 
-            settlement_amount = min(-debt_balance, credit_balance)
-            simplified_transactions.append((creditor, debtor, settlement_amount))
+        settlement_amount = min(-debt_balance, credit_balance)
+        simplified_transactions.append((creditor, debtor, settlement_amount))
 
-            new_debt_balance = debt_balance + settlement_amount
-            new_credit_balance = credit_balance - settlement_amount
+        new_debt_balance = debt_balance + settlement_amount
+        new_credit_balance = credit_balance - settlement_amount
 
-            if new_debt_balance < 0:
-                heapq.heappush(debtors, (new_debt_balance, debtor))
-            if new_credit_balance > 0:
-                heapq.heappush(creditors, (-new_credit_balance, creditor))
-        logger.info("Simplification completed")
-        return simplified_transactions
+        if new_debt_balance < 0:
+            heapq.heappush(debtors, (new_debt_balance, debtor))
+        if new_credit_balance > 0:
+            heapq.heappush(creditors, (-new_credit_balance, creditor))
+    logger.info("Simplification completed")
+    return simplified_transactions
 
 def get_groups_by_user_email(email: str) -> List[str]:
     with user_locks[email]:
         user_data = db_load_user_data(email)
     group_names = []
     for group_id in user_data.get("groups", []):
-        group_data = db_get_group_minimal_details(group_id)
+        with group_locks[group_id]:
+            group_data = db_get_group_minimal_details(group_id)
         if group_data:
             group_names.append(group_data["name"])
     return group_names
