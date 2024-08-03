@@ -55,6 +55,10 @@ class RemoveExpenseRequest(BaseModel):
     member_email: str
     expense_index: int
 
+@app.get("/")
+def hello():
+    return {"message": "Hello World"}
+
 @app.post("/groups/create")
 async def create_group(background_tasks: BackgroundTasks, group: schemas.GroupCreate = Body(...)):
     logger.info(f"Received request to create group: {group}")
