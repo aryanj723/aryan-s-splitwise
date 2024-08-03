@@ -157,8 +157,33 @@ def remove_expense(group_name: str, email: str, expense_index: int):
         if entry["cancelled"]:
             logger.error(f"Removing expense failed: Entry {expense_index} already cancelled.")
             return None
+        
+        group = db_get_group_minimal_details(group_id)
+        conversion_rate = group["currency_conversion_rates"].get(entry["currency"], 1)
+        transactions = []
+        # Add existing balances to transactions
+        for balance in group["balances"]:
+            transactions.append((balance[1], balance[0], balance[2]))
+        for member, share in entry["shares"].items():
+            share_in_local_currency = share * conversion_rate
+            if member != entry["paid_by"]:
+                transactions.append((member, entry["paid_by"], share_in_local_currency))
 
+        # Simplify debts to update balances
+        simplified_balances = simplify_debts(transactions)
+        group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
+        update_group_balances(group_id, group["balances"])
         # Mark the expense as cancelled and save to DB
+        
+        for member, share in entry["shares"].items():
+            share_in_local_currency = share * conversion_rate
+            for spend in group["spends"]:
+                 if spend["member"] == member:
+                    spend["amount"] -= share_in_local_currency
+                    break
+
+        update_group_data(group_id, {"spends": group["spends"]})
+        
         mark_entry_cancelled(group_id, expense_index)
 
         cancellation_entry = Expense(
@@ -173,40 +198,6 @@ def remove_expense(group_name: str, email: str, expense_index: int):
             cancelled=False
         )
         append_group_entry(group_id, cancellation_entry.dict())
-
-        # Revert the cancelled expense's impact on spends and balances
-        group = db_get_group_minimal_details(group_id)
-        conversion_rate = group["currency_conversion_rates"].get(entry["currency"], 1)
-
-        # Update spends and prepare transactions for balance update
-        transactions = []
-        for member, share in entry["shares"].items():
-            share_in_local_currency = share * conversion_rate
-            for spend in group["spends"]:
-                if spend["member"] == member:
-                    spend["amount"] -= share_in_local_currency
-                    break
-            else:
-                logger.warning(f"Member {member} not found in spends array.")
-            if member != entry["paid_by"]:
-                transactions.append((member, entry["paid_by"], share_in_local_currency))
-
-        # Handle the payer's spend update
-        for spend in group["spends"]:
-            if spend["member"] == entry["paid_by"]:
-                spend["amount"] -= entry["amount"] * conversion_rate
-                break
-
-        update_group_data(group_id, {"spends": group["spends"]})
-
-        # Add existing balances to transactions
-        for balance in group["balances"]:
-            transactions.append((balance[1], balance[0], balance[2]))
-
-        # Simplify debts to update balances
-        simplified_balances = simplify_debts(transactions)
-        group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
-        update_group_balances(group_id, group["balances"])
         logger.info(f'Group {group_id} Balances after revert {group["balances"]}')
 
 def update_balances(group, new_entry: Union[Expense, Payment, None] = None):
