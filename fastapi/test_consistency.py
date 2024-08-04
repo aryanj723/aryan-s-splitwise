@@ -62,19 +62,19 @@ def call_add_currency(group_name, email, currency, conversion_rate):
     print(f"Currency {currency} addition to group {group_name} by {email}: API called with status code {response.status_code}")
     print(response.text)
 
-def call_remove_expense(group_name, member_email, expense_index):
+def call_remove_expense(group_name, member_email, expense_datetime):
     url = f"{BASE_URL}/groups/remove_expense"
     payload = {
         "group_name": group_name,
         "member_email": member_email,
-        "expense_index": expense_index
+        "expense_datetime": expense_datetime
     }
     headers = {
         "Content-Type": "application/json"
     }
 
     requests.post(url, json=payload, headers=headers)
-    print(f"Expense index {expense_index} removal from group {group_name} by {member_email}: API called")
+    print(f"Expense with datetime {expense_datetime} removal from group {group_name} by {member_email}: API called")
 
 def call_add_user(group_name, member_email, new_member_email):
     url = f"{BASE_URL}/groups/add_user"
@@ -107,6 +107,24 @@ def get_group_id(name, email, retries=10, delay=1):
             return response.json()["id"]
         time.sleep(delay)
     raise Exception(f"Failed to fetch group ID for {name} after {retries} retries")
+
+def get_group_details(name, email, retries=10, delay=1):
+    url = f"{BASE_URL}/groups/get_group_details"
+    payload = {
+        "name": name,
+        "email": email
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    for _ in range(retries):
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        time.sleep(delay)
+    raise Exception(f"Failed to fetch group details for {name} after {retries} retries")
+
 
 def get_balances(name, email, expected_balances=None, retries=3, delay=1):
     url = f"{BASE_URL}/groups/get_group_details"
@@ -181,7 +199,7 @@ if __name__ == "__main__":
         },
         "currency": "USD"
     })
-    
+
     call_add_expense("Trip", "bob@example.com", {
         "description": "Food",
         "amount": 200,
@@ -361,7 +379,9 @@ if __name__ == "__main__":
     actual_trip_balances = get_balances("Trip", "alice@example.com", expected_balances=expected_trip_balances)
     assert sorted(actual_trip_balances) == sorted(expected_trip_balances), f"Expected {expected_trip_balances} but got {actual_trip_balances}"
     
-    call_remove_expense("Trip", "alice@example.com", 1)  # Assuming the index of "Hotel in EUR" expense is 1
+    group_details = get_group_details("Trip", "alice@example.com")
+    expense_datetime = group_details["entries"][0]["date"]  # Get the datetime of the first expense
+    call_remove_expense("Trip", "alice@example.com", expense_datetime)
 
     expected_trip_balances = [
         ['alice@example.com', 'charlie@example.com', 138.0], ['eve@example.com', 'dave@example.com', 50.0], ['bob@example.com', 'dave@example.com', 40.0], ['bob@example.com', 'charlie@example.com', 2.0]

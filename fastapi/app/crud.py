@@ -1,5 +1,7 @@
 from typing import List, Dict, Union
-from datetime import datetime
+import decimal
+from cachetools import LRUCache
+from datetime import datetime, timezone
 import uuid
 import heapq
 from app.models import Group, Expense, Payment
@@ -22,6 +24,27 @@ from app.db_handler import (
     group_locks,
     user_locks
 )
+
+# Global cache for the number of entries
+entries_cache = LRUCache(maxsize=5000)
+
+def get_number_of_entries(group_id: str) -> int:
+    if group_id in entries_cache:
+        return entries_cache[group_id]
+    
+    group = db_get_group_details(group_id)
+    if group:
+        entries_cache[group_id] = len(group["entries"])
+        return entries_cache[group_id]
+    
+    return 0
+
+def format_datetime(dt: datetime) -> str:
+    # Convert to UTC and round microseconds to two decimal places
+    dt = dt.replace(tzinfo=timezone.utc)
+    rounded_seconds = round(dt.second + dt.microsecond / 1_000_000, 2)
+    return dt.strftime('%Y-%m-%d %H:%M:') + f'{int(dt.minute):02}:{rounded_seconds:05.2f}'
+
 
 def create_group(name: str, creator_email: str, members: List[str], local_currency: str) -> Group:
     group_id = str(uuid.uuid4())
@@ -64,6 +87,7 @@ def get_group_details_by_name(name: str, email: str) -> Group:
     with group_locks[group_id]:
         group_data = db_get_group_details(group_id)
         found_group = Group(**group_data)
+        entries_cache[group_id] = len(group_data["entries"])
         return found_group
 
 def add_expense(group_name: str, email: str, expense_data: schemas.ExpenseCreate) -> Expense:
@@ -88,7 +112,7 @@ def add_expense(group_name: str, email: str, expense_data: schemas.ExpenseCreate
             currency=expense_data.currency,
             paid_by=expense_data.paid_by,
             shares=expense_data.shares,
-            date=str(datetime.now()),
+            date=str(format_datetime(datetime.now())),
             added_by=email,
             cancelled=False
         )
@@ -129,7 +153,7 @@ def add_payment(group_name: str, email: str, payment_data: schemas.PaymentCreate
             currency=payment_data.currency,
             paid_by=payment_data.paid_by,
             paid_to=payment_data.paid_to,
-            date=str(datetime.now()),
+            date=str(format_datetime(datetime.now())),
             added_by=email,
             cancelled=False
         )
@@ -142,20 +166,42 @@ def add_payment(group_name: str, email: str, payment_data: schemas.PaymentCreate
         update_group_balances(group_id, group["balances"])
         logger.info("Updated balances after adding payment")
 
-def remove_expense(group_name: str, email: str, expense_index: int):
+def get_entry_by_time(group_id: str, target_datetime: str) -> dict:
+    low, high = 0, get_number_of_entries(group_id) - 1
+
+    while low <= high:
+        mid = (low + high) // 2
+        mid_entry = db_get_entry_by_index(group_id, mid)
+
+        if not mid_entry:
+            break  # If mid_entry is not found, exit the loop
+
+        mid_datetime = mid_entry["date"]
+
+        if mid_datetime == target_datetime:
+            return mid_entry, mid
+        elif mid_datetime < target_datetime:
+            low = mid + 1
+        else:
+            high = mid - 1
+
+    return None, None
+
+
+def remove_expense(group_name: str, email: str, expense_datetime: str):
     group_id = db_get_group_id_by_name(group_name, email)
     if not group_id:
         logger.error(f"Removing expense failed: Group {group_name} not found for user {email}.")
         return None
 
     with group_locks[group_id]:
-        entry = db_get_entry_by_index(group_id, expense_index)
+        entry, ind = get_entry_by_time(group_id, expense_datetime)
         if not entry:
-            logger.error(f"Removing expense failed: Entry {expense_index} not found.")
+            logger.error(f"Removing expense failed: Entry with {expense_datetime} not found.")
             return None
 
         if entry["cancelled"]:
-            logger.error(f"Removing expense failed: Entry {expense_index} already cancelled.")
+            logger.error(f"Removing expense failed: Entry {expense_datetime} already cancelled.")
             return None
         
         group = db_get_group_minimal_details(group_id)
@@ -184,16 +230,16 @@ def remove_expense(group_name: str, email: str, expense_index: int):
 
         update_group_data(group_id, {"spends": group["spends"]})
         
-        mark_entry_cancelled(group_id, expense_index)
+        mark_entry_cancelled(group_id, ind)
 
         cancellation_entry = Expense(
             type="expense",
-            description=f"Entry {expense_index} was cancelled",
-            amount=0,
+            description=f"Expense {ind+1} was cancelled",
+            amount=entry["amount"],
             currency="N.A",
-            paid_by="",
+            paid_by="N.A",
             shares={},
-            date=str(datetime.now()),
+            date=str(format_datetime(datetime.now())),
             added_by=email,
             cancelled=False
         )

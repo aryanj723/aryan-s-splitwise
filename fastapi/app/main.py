@@ -53,9 +53,9 @@ class AddCurrencyRequest(BaseModel):
 class RemoveExpenseRequest(BaseModel):
     group_name: str
     member_email: str
-    expense_index: int
+    expense_datetime: str
 
-@app.get("/")
+@app.get("/yo")
 def hello():
     return {"message": "Hello World"}
 
@@ -111,10 +111,10 @@ async def add_expense(background_tasks: BackgroundTasks, add_expense_request: Ad
 
 @app.post("/groups/remove_expense")
 async def remove_expense(background_tasks: BackgroundTasks, remove_expense_request: RemoveExpenseRequest = Body(...)):
-    logger.info(f"Received request to remove expense {remove_expense_request.expense_index} from group {remove_expense_request.group_name} by {remove_expense_request.member_email}")
+    logger.info(f"Received request to remove expense at {remove_expense_request.expense_datetime} from group {remove_expense_request.group_name} by {remove_expense_request.member_email}")
 
     def remove_expense_task():
-        crud.remove_expense(remove_expense_request.group_name, remove_expense_request.member_email, remove_expense_request.expense_index -1)
+        crud.remove_expense(remove_expense_request.group_name, remove_expense_request.member_email, remove_expense_request.expense_datetime)
 
     background_tasks.add_task(remove_expense_task)
     return {"message": "Expense removal is successful"}
