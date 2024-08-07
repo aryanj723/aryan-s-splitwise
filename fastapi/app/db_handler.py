@@ -8,6 +8,7 @@ from retrying import retry
 from app.logging_config import logger
 from app.session_manager import session_manager
 import functools
+from fastapi import HTTPException
 
 
 db = session_manager.client["group_expense_manager"]
@@ -176,17 +177,26 @@ def lru_cache_without_none(maxsize=5000):
     return decorator
 
 @retry(retry_on_exception=retry_if_pymongo_error, stop_max_attempt_number=3, wait_fixed=1000)
-@lru_cache_without_none(maxsize=5000)
+@lru_cache_without_none(maxsize=10000)
 def get_group_id_by_name(group_name: str, email: str) -> str:
     user_data = users_collection.find_one({"email": email}, {"_id": 0, "groups": 1}, session=session_manager.session)
     if not user_data or "groups" not in user_data:
         logger.info(f"User {email} not found or user has no groups.")
         return None
 
+    matching_group_ids = []
     for group_id in user_data["groups"]:
-        group_data = groups_collection.find_one({"id": group_id, "name": group_name}, {"_id": 0, "id": 1}, session=session_manager.session)
+        # Retrieve only the id and name fields for verification
+        group_data = groups_collection.find_one({"id": group_id, "name": group_name}, {"_id": 0, "id": 1, "name": 1}, session=session_manager.session)
         if group_data:
-            return group_data["id"]
+            matching_group_ids.append(group_data["id"])
+
+    if len(matching_group_ids) > 1:
+        logger.error(f"Multiple groups found for user {email} with the name {group_name}. Group IDs: {matching_group_ids}")
+        raise HTTPException(status_code=500, detail=f"Multiple groups found for user {email} with the name {group_name}. Please contact support.")
+
+    if matching_group_ids:
+        return matching_group_ids[0]
 
     logger.info(f"Group {group_name} not found for user {email}")
     return None

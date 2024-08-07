@@ -1,5 +1,6 @@
 from typing import List, Dict, Union
 import decimal
+import time ,random
 from cachetools import LRUCache
 from datetime import datetime, timezone
 import uuid
@@ -45,9 +46,20 @@ def format_datetime(dt: datetime) -> str:
     rounded_seconds = round(dt.second + dt.microsecond / 1_000_000, 2)
     return dt.strftime('%Y-%m-%d %H:%M:') + f'{int(dt.minute):02}:{rounded_seconds:05.2f}'
 
+def generate_simple_id():
+    # Use UTC time (integer part only)
+    utc_time = int(time.time())
+    # Convert to a hex string (remove '0x' and ensure consistent length)
+    time_part = hex(utc_time)[2:]
+    # Generate a random 32-bit hex string
+    random_part = hex(random.getrandbits(32))[2:]
+    # Ensure the random part is of consistent length
+    random_part = random_part.zfill(8)
+    # Combine time and random parts
+    return f"{time_part}{random_part}"
 
 def create_group(name: str, creator_email: str, members: List[str], local_currency: str) -> Group:
-    group_id = str(uuid.uuid4())
+    group_id = str(generate_simple_id())
     with group_locks[group_id]:
         logger.info(f"Creating group with ID: {group_id}, name: {name}, creator: {creator_email}, members: {members}")
         group = Group(id=group_id, name=name, creator_email=creator_email, members=[creator_email] + members, local_currency=local_currency, entries=[], balances=[], currency_conversion_rates={})

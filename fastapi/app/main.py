@@ -63,11 +63,11 @@ def hello():
 async def create_group(background_tasks: BackgroundTasks, group: schemas.GroupCreate = Body(...)):
     logger.info(f"Received request to create group: {group}")
 
-    all_members = [group.creator_email] + group.members
-    for member in all_members:
-        if crud.db_get_group_id_by_name(group.name, member):
-            logger.error(f"Group creation failed: Member {member} is already part of a group with the name {group.name}.")
-            raise HTTPException(status_code=400, detail="Group creation failed: One or more members are already part of a group with the same name. Please try with a different name.")
+    # all_members = [group.creator_email] + group.members
+    # for member in all_members:
+    #     if crud.db_get_group_id_by_name(group.name, member):
+    #         logger.error(f"Group creation failed: Member {member} is already part of a group with the name {group.name}.")
+    #         raise HTTPException(status_code=400, detail="Group creation failed: One or more members are already part of a group with the same name. Please try with a different name.")
     
     def create_group_task():
         crud.create_group(group.name, group.creator_email, group.members, group.local_currency)
