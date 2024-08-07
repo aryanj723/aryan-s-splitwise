@@ -150,7 +150,7 @@ if __name__ == "__main__":
     # Create initial groups and add expenses/payments
     call_create_group("Trip", "ali@example.com", ["bobi@example.com"], "USD")
     call_create_group("Dinner", "charl@example.com", ["dav@example.com"], "USD")
-
+    time.sleep(2)
     call_add_expense("Trip", "ali@example.com", {
         "description": "Hotel",
         "amount": 200,
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     })
     
     call_create_group("Trip", "alice@example.com", ["bob@example.com", "charlie@example.com", "dave@example.com", "eve@example.com"], "USD")
-
+    time.sleep(2)
     call_add_expense("Dinner", "charl@example.com", {
         "description": "Pizza",
         "amount": 50,
@@ -393,6 +393,7 @@ if __name__ == "__main__":
     
     # Add new tests for adding a user to a group
     call_add_user("Trip", "alice@example.com", "new_member@example.com")
+    time.sleep(2)
     # Verifying the user is added by attempting to add an expense for the new user
     call_add_expense("Trip", "new_member@example.com", {
         "description": "New Member's Expense",
