@@ -246,7 +246,7 @@ def remove_expense(group_name: str, email: str, expense_datetime: str):
 
         cancellation_entry = Expense(
             type="expense",
-            description=f"Expense {entry["description"]} on {entry["date"]} was cancelled",
+            description=f'Expense {entry["description"]} on {entry["date"]} was cancelled',
             amount=entry["amount"],
             currency="N.A",
             paid_by="N.A",
