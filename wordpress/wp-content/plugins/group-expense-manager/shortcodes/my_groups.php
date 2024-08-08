@@ -9,7 +9,7 @@ function gem_my_groups_shortcode() {
     $user = wp_get_current_user();
     $email = $user->user_email;
 
-    $response = wp_remote_post('http://fastapi/groups/get_groups', array(
+    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_groups', array(
         'method'    => 'POST',
         'body'      => json_encode(array('email' => $email)),
         'headers'   => array(

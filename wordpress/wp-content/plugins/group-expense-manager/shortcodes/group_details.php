@@ -14,7 +14,7 @@ function gem_group_details_shortcode() {
     $user = wp_get_current_user();
     $email = $user->user_email;
 
-    $response = wp_remote_post('http://fastapi/groups/get_group_details', array(
+    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_group_details', array(
         'method'    => 'POST',
         'body'      => json_encode(array('name' => $group_name, 'email' => $email)),
         'headers'   => array(
@@ -28,8 +28,23 @@ function gem_group_details_shortcode() {
     } else {
         $group_details = json_decode(wp_remote_retrieve_body($response), true);
         $output = '<h2>' . htmlspecialchars($group_details['name']) . '</h2>';
-        $output .= '<div class="container">';
-        $output .= '<div class="left-column">';
+
+        $output .= '<table class="table">';
+        $output .= '<thead><tr><th>Currency Information</th><th>Creator & Members</th><th>Balances</th></tr></thead>';
+        $output .= '<tbody><tr>';
+
+        // Currency Information
+        $output .= '<td>';
+        $output .= '<p>Local Currency: ' . htmlspecialchars($group_details['local_currency']) . '</p>';
+        $output .= '<ul>';
+        foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
+            $output .= '<li>1 ' . htmlspecialchars($currency) . ' = ' . htmlspecialchars($rate) . ' ' . htmlspecialchars($group_details['local_currency']) . '</li>';
+        }
+        $output .= '</ul>';
+        $output .= '</td>'; // Close Currency Information column
+
+        // Creator and Members
+        $output .= '<td>';
         $output .= '<div class="creator">Creator: ' . htmlspecialchars($group_details['creator_email']) . '</div>';
         $output .= '<div class="members">Members:</div><ul>';
         foreach ($group_details['members'] as $member) {
@@ -41,26 +56,28 @@ function gem_group_details_shortcode() {
             }
         }
         $output .= '</ul>';
-        $output .= '</div>'; // Close left-column
+        $output .= '</td>'; // Close Creator & Members column
 
+        // Balances
+        $output .= '<td>';
         if (!empty($group_details['balances'])) {
-            $output .= '<div class="right-column">';
-            $output .= '<div class="box">';
-            $output .= '<h4>Balances</h4><ul>';
+            $output .= '<ul>';
             foreach ($group_details['balances'] as $balance) {
                 $debtor = ($balance[0] == $email) ? 'You' : get_user_display_name($balance[0]);
                 $creditor = ($balance[1] == $email) ? 'You' : get_user_display_name($balance[1]);
-                $output .= '<li>' . $debtor . ' should pay ' . htmlspecialchars($balance[2]) . ' to ' . $creditor . '</li>';
+                $output .= '<li>' . $debtor . ' should pay ' . htmlspecialchars($balance[2]) . ' ' . htmlspecialchars($balance[3]) . ' to ' . $creditor . '</li>';
             }
             $output .= '</ul>';
-            $output .= '</div>'; // Close box
-            $output .= '</div>'; // Close right-column
         }
+        $output .= '</td>'; // Close Balances column
 
-        $output .= '</div>'; // Close container
+        $output .= '</tr></tbody></table>';
 
+        $output .= '<div class="button-container">';
         $output .= '<button id="add-entry-btn" class="btn btn-primary" style="margin-right: 10px;">Add Expense</button>';
         $output .= '<button id="settle-btn" class="btn btn-primary">Record Payment</button>';
+        $output .= '</div>';
+
         $output .= '<div id="group-entries">';
         $output .= '<h4>Expenses</h4>' . gem_display_expenses($group_details['entries']);
         $output .= '<h4>Payments</h4>' . gem_display_payments($group_details['entries']);
@@ -87,6 +104,13 @@ function gem_group_details_shortcode() {
         foreach ($group_details['members'] as $member) {
             $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
             $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
+        }
+        $output .= '</select>
+                    <label for="entry-currency">Currency:</label>
+                    <select id="entry-currency" class="form-control">';
+        $output .= '<option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
+        foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
+            $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
         }
         $output .= '</select>
                     <label for="entry-shares">Shares:</label>';
@@ -136,6 +160,13 @@ function gem_group_details_shortcode() {
             $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
         }
         $output .= '</select>
+                                        <label for="payment-currency">Currency:</label>
+                                        <select id="payment-currency" class="form-control">';
+        $output .= '<option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
+        foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
+            $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
+        }
+        $output .= '</select>
                                         <button type="submit" class="btn btn-primary mt-3">Submit</button>
                                     </form>
                                 </div>
@@ -183,11 +214,12 @@ function gem_group_details_shortcode() {
                                     type: "POST",
                                     data: {
                                         action: "gem_add_expense",
-                                        group_name: "' . $group_name . '",
+                                        group_name: "' . rawurlencode($group_name) . '",
                                         email: "' . $email . '",
                                         description: $("#entry-description").val(),
                                         amount: $("#entry-amount").val(),
                                         paid_by: $("#entry-paid-by").val(),
+                                        currency: $("#entry-currency").val(),
                                         shares: shares
                                     },
                                     success: function(response) {
@@ -222,12 +254,13 @@ function gem_group_details_shortcode() {
                                     type: "POST",
                                     data: {
                                         action: "gem_add_payment",
-                                        group_name: "' . $group_name . '",
+                                        group_name: "' . rawurlencode($group_name) . '",
                                         email: "' . $email . '",
                                         description: $("#payment-description").val(),
                                         amount: $("#payment-amount").val(),
                                         paid_by: paid_by,
-                                        paid_to: paid_to
+                                        paid_to: paid_to,
+                                        currency: $("#payment-currency").val()
                                     },
                                     success: function(response) {
                                         $(".modal-footer .spinner-border").addClass("d-none");

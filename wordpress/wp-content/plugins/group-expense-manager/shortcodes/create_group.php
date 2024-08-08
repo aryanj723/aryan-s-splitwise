@@ -16,11 +16,15 @@ function gem_create_group_shortcode() {
                                </button>
                            </div>
                            <div class="modal-body">
-                           <p><strong>You will be a part of the group by default.</strong></p> <!-- Displaying the message in bold -->
+                               <p><strong>You will be a part of the group by default.</strong></p> <!-- Displaying the message in bold -->
                                <form id="create-group-form">
                                    <div class="form-group">
                                        <label for="group-name">Group Name:</label>
                                        <input type="text" id="group-name" class="form-control" placeholder="Enter group name" required>
+                                   </div>
+                                   <div class="form-group">
+                                       <label for="local-currency">Local Currency:</label>
+                                       <input type="text" id="local-currency" class="form-control" placeholder="Enter local currency" required>
                                    </div>
                                    <div id="members-container">
                                        <div class="form-group">
@@ -41,6 +45,7 @@ function gem_create_group_shortcode() {
                        // Function to clear form fields
                        function clearForm() {
                            $("#group-name").val("");
+                           $("#local-currency").val("");
                            $("input[name=\'group-member\']").val("");
                        }
 
@@ -52,6 +57,7 @@ function gem_create_group_shortcode() {
                        $("#create-group-form").submit(function(event) {
                            event.preventDefault();
                            var groupName = $("#group-name").val();
+                           var localCurrency = $("#local-currency").val();
                            var members = [];
                            $("input[name=\'group-member\']").each(function() {
                                if ($(this).val().trim() !== "") {
@@ -64,6 +70,7 @@ function gem_create_group_shortcode() {
                                data: {
                                    action: "gem_create_group",
                                    group_name: groupName,
+                                   local_currency: localCurrency,
                                    members: members
                                },
                                success: function(response) {
@@ -94,4 +101,5 @@ function gem_create_group_shortcode() {
     return $output;
 }
 
+add_shortcode('gem_create_group', 'gem_create_group_shortcode');
 ?>

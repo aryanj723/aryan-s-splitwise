@@ -26,13 +26,15 @@ function gem_display_expenses($entries) {
 
     $logged_in_user_email = wp_get_current_user()->user_email;
     $output = '<table class="table">';
-    $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Paid By</th><th>Shares</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
+    $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Paid By</th><th>Shares</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
     foreach ($entries as $entry) {
         if ($entry['type'] !== 'settlement') {
             $display = gem_get_entry_display($entry);
-            $output .= '<tr>';
+            $class = $entry['cancelled'] ? ' class="cancelled"' : '';
+            $output .= '<tr' . $class . '>';
             $output .= '<td>' . $entry['description'] . '</td>';
             $output .= '<td>' . $entry['amount'] . '</td>';
+            $output .= '<td>' . $entry['currency'] . '</td>';
             $output .= '<td>' . $display['paid_by'] . '</td>';
             $output .= '<td>';
             if (isset($entry['shares'])) {
@@ -48,7 +50,7 @@ function gem_display_expenses($entries) {
                 $output .= 'N/A';
             }
             $output .= '</td>';
-            $output .= '<td>' . substr($entry['date'], 0, 19) . '</td>'; // Removing decimals from seconds
+            $output .= '<td>' . $entry['date'] . '</td>'; 
             $output .= '<td>' . $display['added_by'] . '</td>';
             $output .= '</tr>';
         }
@@ -64,13 +66,16 @@ function gem_display_payments($entries) {
 
     $logged_in_user_email = wp_get_current_user()->user_email;
     $output = '<table class="table">';
-    $output .= '<thead><tr><th>Description</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
+    $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
     foreach ($entries as $entry) {
         if ($entry['type'] === 'settlement') {
             $display = gem_get_entry_display($entry);
-            $output .= '<tr>';
-            $output .= '<td>' . $display['paid_by'] . ' paid ' . $entry['amount'] . ' to ' . $display['paid_to'] . '</td>';
-            $output .= '<td>' . substr($entry['date'], 0, 19) . '</td>'; // Removing decimals from seconds
+            $class = $entry['cancelled'] ? ' class="cancelled"' : '';
+            $output .= '<tr' . $class . '>';
+            $output .= '<td>' . $display['paid_by'] . ' paid ' . $display['paid_to'] . '</td>';
+            $output .= '<td>' . $entry['amount'] . '</td>';
+            $output .= '<td>' . $entry['currency'] . '</td>';
+            $output .= '<td>' . $entry['date'] . '</td>'; 
             $output .= '<td>' . $display['added_by'] . '</td>';
             $output .= '</tr>';
         }

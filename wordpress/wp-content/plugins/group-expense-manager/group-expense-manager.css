@@ -87,30 +87,25 @@ li {
     justify-content: center; /* Center the entire container */
 }
 
-.left-column {
-    flex: 1 1 40%; /* Take up 40% of the available space */
-}
-
-.right-column {
-    flex: 1 1 60%; /* Take up 60% of the available space */
-    padding-left: 20px;
-    display: flex;
-    justify-content: flex-start; /* Align the box to the left */
-}
-
-.box {
-    width: 100%; /* Make the box take the full width of the right column */
-    max-width: 600px; /* Increased max width for better readability */
+.full-width-box {
+    width: 100%;
     border: 1px solid #ddd;
     padding: 20px;
     background-color: #f9f9f9;
     margin-top: 20px;
 }
 
-.box h4 {
-    font-weight: bold;
-    margin-bottom: 10px;
+.cancelled {
+    text-decoration: line-through;
+    color: gray;
 }
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
 .group-list {
     display: flex;
     flex-wrap: wrap;
