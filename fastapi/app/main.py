@@ -85,7 +85,7 @@ async def add_currency(background_tasks: BackgroundTasks, request: AddCurrencyRe
         raise HTTPException(status_code=404, detail="Group not found.")
      
     def add_currency_task():
-        crud.add_currency(group_id, request.currency, request.conversion_rate)
+        crud.add_currency(group_id, request.currency, request.conversion_rate, request.email)
      
     background_tasks.add_task(add_currency_task)
     return {"message": "Currency added successfully"}
@@ -95,9 +95,9 @@ async def add_expense(background_tasks: BackgroundTasks, add_expense_request: Ad
     logger.info(f"Received request to add expense to group {add_expense_request.name} for user {add_expense_request.email}: {add_expense_request.expense}")
 
     # Validate shares
-    if sum(add_expense_request.expense.shares.values()) != add_expense_request.expense.amount:
-        logger.error("Adding expense failed: Shares do not sum up to the total amount.")
-        raise HTTPException(status_code=400, detail="Shares do not sum up to the total amount.")
+    # if sum(add_expense_request.expense.shares.values()) != add_expense_request.expense.amount:
+    #     logger.error("Adding expense failed: Shares do not sum up to the total amount.")
+    #     raise HTTPException(status_code=400, detail="Shares do not sum up to the total amount.")
 
     def add_expense_task():
         crud.add_expense(add_expense_request.name, add_expense_request.email, add_expense_request.expense)
@@ -168,7 +168,7 @@ async def add_user_to_group(background_tasks: BackgroundTasks, request: AddUserR
         raise HTTPException(status_code=404, detail="Group not found or member does not belong to the group")
     
     def add_user_task():
-        crud.add_user_to_group(group_id, request.new_member_email)
+        crud.add_user_to_group(group_id,request.member_email, request.new_member_email)
 
     background_tasks.add_task(add_user_task)
     return {"message": "User added to group"}

@@ -213,3 +213,13 @@ def get_entry_by_index(group_id: str, entry_index: int) -> dict:
         return None
     return result[0]["entry"]
 
+def append_log_entry(group_id: str, log_entry: str, session: ClientSession = None):
+    result = groups_collection.update_one(
+        {"id": group_id},
+        {"$push": {"logs": log_entry}},
+        session=session
+    )
+    if result.modified_count > 0:
+        logger.info(f"Log entry appended for group {group_id}: {log_entry}")
+    else:
+        logger.warning(f"Failed to append log entry for group {group_id}: {log_entry}")

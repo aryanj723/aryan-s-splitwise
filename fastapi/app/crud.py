@@ -18,6 +18,7 @@ from app.db_handler import (
     update_group_balances,
     append_group_entry,
     mark_entry_cancelled,
+    append_log_entry,
     get_group_lock,
     release_group_lock,
     update_group_data,
@@ -76,7 +77,7 @@ def create_group(name: str, creator_email: str, members: List[str], local_curren
 
         return group
 
-def add_currency(group_id: str, currency: str, conversion_rate: float):
+def add_currency(group_id: str, currency: str, conversion_rate: float, email: str):
     with group_locks[group_id]:
         group = db_get_group_minimal_details(group_id)
         if not group:
@@ -84,8 +85,12 @@ def add_currency(group_id: str, currency: str, conversion_rate: float):
             return None
 
         group["currency_conversion_rates"][currency] = conversion_rate
-        update_group_data(group_id, {"currency_conversion_rates": group["currency_conversion_rates"]})
 
+        # Log the addition of a new currency
+        log_entry = f"Currency {currency} was added by {email}"
+        append_log_entry(group_id, log_entry)
+        
+        update_group_data(group_id, {"currency_conversion_rates": group["currency_conversion_rates"]})
 
 def get_group_minimal_details(group_id: str) -> dict:
     group_data = db_get_group_minimal_details(group_id)
@@ -231,31 +236,23 @@ def remove_expense(group_name: str, email: str, expense_datetime: str):
         simplified_balances = simplify_debts(transactions)
         group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
         update_group_balances(group_id, group["balances"])
-        # Mark the expense as cancelled and save to DB
-        
+
+        # Update spends
         for member, share in entry["shares"].items():
             share_in_local_currency = share * conversion_rate
             for spend in group["spends"]:
-                 if spend["member"] == member:
+                if spend["member"] == member:
                     spend["amount"] -= share_in_local_currency
                     break
 
         update_group_data(group_id, {"spends": group["spends"]})
         
+        # Mark the expense as cancelled and save to DB
         mark_entry_cancelled(group_id, ind)
 
-        cancellation_entry = Expense(
-            type="expense",
-            description=f'Expense {entry["description"]} on {entry["date"]} was cancelled',
-            amount=entry["amount"],
-            currency="N.A",
-            paid_by="N.A",
-            shares={},
-            date=str(format_datetime(datetime.now())),
-            added_by=email,
-            cancelled=False
-        )
-        append_group_entry(group_id, cancellation_entry.dict())
+        # Log the removal
+        log_entry = f'Expense {entry["description"]} of {entry["amount"]} on {entry["date"]} was cancelled by {email}'
+        append_log_entry(group_id, log_entry)
         logger.info(f'Group {group_id} Balances after revert {group["balances"]}')
 
 def update_balances(group, new_entry: Union[Expense, Payment, None] = None):
@@ -341,17 +338,21 @@ def get_groups_by_user_email(email: str) -> List[str]:
     return group_names
 
 def delete_group(group_name: str, user_email: str):
-    group = get_group_details_by_name(group_name, user_email)
-    if not group:
+    group_id = db_get_group_id_by_name(group_name, user_email)
+    if not group_id:
         logger.error(f"Delete group failed: Group {group_name} not found for user {user_email}")
         return
 
-    group_id = group.id
-    user_data = db_load_user_data(user_email)
-    user_data["groups"].remove(group_id)
-    db_save_user_data(user_data)
+    with user_locks[user_email]:
+        user_data = db_load_user_data(user_email)
+        user_data["groups"].remove(group_id)
+        db_save_user_data(user_data)
+    
+    log_entry = f"User {user_email} left the group"
+    with group_locks[group_id]:
+        append_log_entry(group_id, log_entry)
 
-def add_user_to_group(group_id: str, new_member_email: str):
+def add_user_to_group(group_id: str, member_email:str, new_member_email: str):
     with user_locks[new_member_email]:
         user_data = db_load_user_data(new_member_email)
         if "groups" not in user_data:
@@ -369,5 +370,10 @@ def add_user_to_group(group_id: str, new_member_email: str):
 
         group["members"].append(new_member_email)
         group["spends"].append({"member": new_member_email, "amount": 0.0})
+
+        # Log the addition of a new member
+        log_entry = f"User {new_member_email} added by {member_email}"
+        append_log_entry(group_id, log_entry)
+        
         update_group_data(group_id, {"members": group["members"], "spends": group["spends"]})
         logger.info(f"User {new_member_email} added to group {group_id}")

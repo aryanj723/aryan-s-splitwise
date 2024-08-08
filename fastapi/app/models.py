@@ -28,4 +28,4 @@ class Group(BaseModel):
     currency_conversion_rates: Dict[str, float] = {}
     locked: bool = False
     spends: List[Dict[str, Union[str, float]]] = []  # Add spends array
-
+    logs: List[str] = []
