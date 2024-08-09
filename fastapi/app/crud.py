@@ -1,6 +1,6 @@
 from typing import List, Dict, Union
 import decimal
-import time ,random
+import time, random
 from cachetools import LRUCache
 from datetime import datetime, timezone
 import uuid
@@ -29,6 +29,9 @@ from app.db_handler import (
 
 # Global cache for the number of entries
 entries_cache = LRUCache(maxsize=5000)
+
+def round_amount(amount):
+    return round(amount, 2) if amount % 1 else int(amount)
 
 def get_number_of_entries(group_id: str) -> int:
     if group_id in entries_cache:
@@ -84,7 +87,7 @@ def add_currency(group_id: str, currency: str, conversion_rate: float, email: st
             logger.error(f"Adding currency failed: Group {group_id} not found.")
             return None
 
-        group["currency_conversion_rates"][currency] = conversion_rate
+        group["currency_conversion_rates"][currency] = round_amount(conversion_rate)
 
         # Log the addition of a new currency
         log_entry = f"Currency {currency} was added by {email}"
@@ -119,16 +122,19 @@ def add_expense(group_name: str, email: str, expense_data: schemas.ExpenseCreate
             logger.error(f"Adding expense failed: Group {group_id} not found.")
             return None
 
+        # Filter out shares with 0 value
+        filtered_shares = {k: round_amount(v) for k, v in expense_data.shares.items() if v != 0}
+
         # Calculate total amount spent in local currency
         conversion_rate = group["currency_conversion_rates"].get(expense_data.currency, 1)
 
         expense = Expense(
             type="expense",
             description=expense_data.description,
-            amount=expense_data.amount,
+            amount=round_amount(expense_data.amount),
             currency=expense_data.currency,
             paid_by=expense_data.paid_by,
-            shares=expense_data.shares,
+            shares=filtered_shares,
             date=str(format_datetime(datetime.now())),
             added_by=email,
             cancelled=False
@@ -137,14 +143,14 @@ def add_expense(group_name: str, email: str, expense_data: schemas.ExpenseCreate
         append_group_entry(group_id, expense.dict())
 
         # Update spends
-        for member, share in expense_data.shares.items():
-            share_in_local_currency = share * conversion_rate
+        for member, share in filtered_shares.items():
+            share_in_local_currency = round_amount(share * conversion_rate)
             for spend in group["spends"]:
-                if spend["member"] == member:
-                    spend["amount"] += share_in_local_currency
+                if spend[0] == member:
+                    spend[1] += share_in_local_currency
                     break
             else:
-                group["spends"].append({"member": member, "amount": share_in_local_currency})
+                group["spends"].append([member, share_in_local_currency])
 
         update_group_data(group_id, {"spends": group["spends"]})
         update_balances(group, expense)
@@ -166,7 +172,7 @@ def add_payment(group_name: str, email: str, payment_data: schemas.PaymentCreate
         payment = Payment(
             type="settlement",
             description=payment_data.description,
-            amount=payment_data.amount,
+            amount=round_amount(payment_data.amount),
             currency=payment_data.currency,
             paid_by=payment_data.paid_by,
             paid_to=payment_data.paid_to,
@@ -228,21 +234,21 @@ def remove_expense(group_name: str, email: str, expense_datetime: str):
         for balance in group["balances"]:
             transactions.append((balance[1], balance[0], balance[2]))
         for member, share in entry["shares"].items():
-            share_in_local_currency = share * conversion_rate
+            share_in_local_currency = round_amount(share * conversion_rate)
             if member != entry["paid_by"]:
                 transactions.append((member, entry["paid_by"], share_in_local_currency))
 
         # Simplify debts to update balances
         simplified_balances = simplify_debts(transactions)
-        group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
+        group["balances"] = [[payer, payee, round_amount(amount)] for payer, payee, amount in simplified_balances]
         update_group_balances(group_id, group["balances"])
 
         # Update spends
         for member, share in entry["shares"].items():
-            share_in_local_currency = share * conversion_rate
+            share_in_local_currency = round_amount(share * conversion_rate)
             for spend in group["spends"]:
-                if spend["member"] == member:
-                    spend["amount"] -= share_in_local_currency
+                if spend[0] == member:
+                    spend[1] -= share_in_local_currency
                     break
 
         update_group_data(group_id, {"spends": group["spends"]})
@@ -272,19 +278,19 @@ def update_balances(group, new_entry: Union[Expense, Payment, None] = None):
                 if member != payer:
                     # Convert shares to local currency
                     conversion_rate = group["currency_conversion_rates"].get(new_entry.currency, 1)
-                    transactions.append((payer, member, share * conversion_rate))
+                    transactions.append((payer, member, round_amount(share * conversion_rate)))
         elif new_entry.type == "settlement":
             payer = new_entry.paid_by
             payee = new_entry.paid_to
             amount = new_entry.amount
             # Convert amount to local currency
             conversion_rate = group["currency_conversion_rates"].get(new_entry.currency, 1)
-            transactions.append((payer, payee, amount * conversion_rate))
+            transactions.append((payer, payee, round_amount(amount * conversion_rate)))
 
     # Simplify debts
     simplified_balances = simplify_debts(transactions)
 
-    group["balances"] = [[payer, payee, amount] for payer, payee, amount in simplified_balances]
+    group["balances"] = [[payer, payee, round_amount(amount)] for payer, payee, amount in simplified_balances]
     logger.info(f"Balances updated !") 
 
 def simplify_debts(transactions):
@@ -314,7 +320,7 @@ def simplify_debts(transactions):
         credit_balance = -credit_balance  # convert back to positive
 
         settlement_amount = min(-debt_balance, credit_balance)
-        simplified_transactions.append((creditor, debtor, settlement_amount))
+        simplified_transactions.append((creditor, debtor, round_amount(settlement_amount)))
 
         new_debt_balance = debt_balance + settlement_amount
         new_credit_balance = credit_balance - settlement_amount
@@ -352,7 +358,7 @@ def delete_group(group_name: str, user_email: str):
     with group_locks[group_id]:
         append_log_entry(group_id, log_entry)
 
-def add_user_to_group(group_id: str, member_email:str, new_member_email: str):
+def add_user_to_group(group_id: str, member_email: str, new_member_email: str):
     with user_locks[new_member_email]:
         user_data = db_load_user_data(new_member_email)
         if "groups" not in user_data:
@@ -369,7 +375,7 @@ def add_user_to_group(group_id: str, member_email:str, new_member_email: str):
             return
 
         group["members"].append(new_member_email)
-        group["spends"].append({"member": new_member_email, "amount": 0.0})
+        group["spends"].append([new_member_email, 0])
 
         # Log the addition of a new member
         log_entry = f"User {new_member_email} added by {member_email}"
