@@ -30,7 +30,7 @@ function gem_group_details_shortcode() {
         $output = '<h2>' . htmlspecialchars($group_details['name']) . '</h2>';
 
         $output .= '<table class="table">';
-        $output .= '<thead><tr><th>Currency Information</th><th>Creator & Members</th><th>Balances</th></tr></thead>';
+        $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances</th></tr></thead>';
         $output .= '<tbody><tr>';
 
         // Currency Information
@@ -43,20 +43,23 @@ function gem_group_details_shortcode() {
         $output .= '</ul>';
         $output .= '</td>'; // Close Currency Information column
 
-        // Creator and Members
+        // Members & Spends
         $output .= '<td>';
-        $output .= '<div class="creator">Creator: ' . htmlspecialchars($group_details['creator_email']) . '</div>';
-        $output .= '<div class="members">Members:</div><ul>';
+        $output .= '<div class="members">Members & Spends:</div><ul>';
+        
         foreach ($group_details['members'] as $member) {
-            if ($member == $email) {
-                $output .= '<li>You</li>';
-            } else {
-                $user_info = get_user_by('email', $member);
-                $output .= '<li>' . ($user_info ? $user_info->display_name : $member) . '</li>';
+            $spend = 0;
+            foreach ($group_details['spends'] as $spend_entry) {
+                if ($spend_entry[0] == $member) {
+                    $spend = $spend_entry[1];
+                    break;
+                }
             }
+            $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+            $output .= '<li>' . htmlspecialchars($display_name) . ': ' . htmlspecialchars(number_format($spend, 2)) . ' ' . htmlspecialchars($group_details['local_currency']) . '</li>';
         }
         $output .= '</ul>';
-        $output .= '</td>'; // Close Creator & Members column
+        $output .= '</td>'; // Close Members & Spends column
 
         // Balances
         $output .= '<td>';
@@ -65,7 +68,12 @@ function gem_group_details_shortcode() {
             foreach ($group_details['balances'] as $balance) {
                 $debtor = ($balance[0] == $email) ? 'You' : get_user_display_name($balance[0]);
                 $creditor = ($balance[1] == $email) ? 'You' : get_user_display_name($balance[1]);
-                $output .= '<li>' . $debtor . ' should pay ' . htmlspecialchars($balance[2]) . ' ' . htmlspecialchars($balance[3]) . ' to ' . $creditor . '</li>';
+                
+                // Check if the currency key exists before accessing
+                $currency = isset($balance[3]) ? htmlspecialchars($balance[3]) : '';
+
+                // Ensure debtor and creditor are not null
+                $output .= '<li>' . htmlspecialchars($debtor ?? '') . ' should pay ' . htmlspecialchars($balance[2] ?? '') . ' ' . $currency . ' to ' . htmlspecialchars($creditor ?? '') . '</li>';
             }
             $output .= '</ul>';
         }
@@ -75,12 +83,24 @@ function gem_group_details_shortcode() {
 
         $output .= '<div class="button-container">';
         $output .= '<button id="add-entry-btn" class="btn btn-primary" style="margin-right: 10px;">Add Expense</button>';
-        $output .= '<button id="settle-btn" class="btn btn-primary">Record Payment</button>';
+        $output .= '<button id="settle-btn" class="btn btn-primary" style="margin-right: 10px;">Record Payment</button>';
+        $output .= '<button id="delete-group-btn" class="btn btn-danger">Leave Group</button>';
         $output .= '</div>';
 
         $output .= '<div id="group-entries">';
         $output .= '<h4>Expenses</h4>' . gem_display_expenses($group_details['entries']);
         $output .= '<h4>Payments</h4>' . gem_display_payments($group_details['entries']);
+        $output .= '</div>';
+
+        // Logs Section
+        $output .= '<div id="group-logs">';
+        $output .= '<h4>Logs</h4>';
+        $output .= '<table class="table">';
+        $output .= '<tbody>';
+        foreach ($group_details['logs'] as $log) {
+            $output .= '<tr><td>' . htmlspecialchars($log) . '</td></tr>';
+        }
+        $output .= '</tbody></table>';
         $output .= '</div>';
 
         // Modals for Add Expense and Record Payment
@@ -192,6 +212,34 @@ function gem_group_details_shortcode() {
 
                             $("#settle-btn").click(function() {
                                 $("#settle-modal").modal("show");
+                            });
+
+                            $("#delete-group-btn").click(function() {
+                                var confirmDelete = confirm("Are you sure you want to leave the group?");
+                                if (confirmDelete) {
+                                    $.ajax({
+                                        url: "' . admin_url('admin-ajax.php') . '",
+                                        type: "POST",
+                                        data: {
+                                            action: "gem_delete_group",
+                                            group_name: "' . rawurlencode($group_name) . '",
+                                            email: "' . $email . '"
+                                        },
+                                        success: function(response) {
+                                            if (response.success) {
+                                                alert("Successfully left the group.");
+                                                window.location.href = "' . site_url('/my-groups') . '";
+                                            } else if (response.data && response.data.status === 400) {
+                                                alert("Unable to leave group, you have pending balances.");
+                                            } else {
+                                                alert(response.data || "An unexpected error occurred.");
+                                            }
+                                        },
+                                        error: function(error) {
+                                            alert("An error occurred: " + error.statusText);
+                                        }
+                                    });
+                                }
                             });
 
                             $("#entry-amount").on("input", function() {

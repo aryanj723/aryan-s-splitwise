@@ -327,6 +327,9 @@ function gem_delete_group() {
 
         if ($response_code === 200) {
             wp_send_json_success('Success');
+        } elseif ($response_code === 400) {
+            // Handle specific error for pending balances
+            wp_send_json_error('Unable to leave group, you have pending balances.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
         } else {
