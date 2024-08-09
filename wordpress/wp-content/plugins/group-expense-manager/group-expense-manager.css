@@ -123,3 +123,29 @@ li {
 .group-button:hover {
     background-color: #0056b3;
 }
+
+.user-share {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.share-input {
+    width: 25%;
+    margin-left: auto;
+}
+
+.user-checkbox {
+    margin-right: 10px;
+}
+
+.user-name {
+    width: 60%;
+}
+
+/* Ensure that unchecked users are visually marked */
+.user-checkbox:not(:checked) + .user-name, 
+.user-checkbox:not(:checked) + .user-name + .share-input {
+    opacity: 0.5;
+    pointer-events: none;
+}

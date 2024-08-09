@@ -144,13 +144,13 @@ async def get_groups(email: EmailRequest = Body(...)):
 async def delete_group(background_tasks: BackgroundTasks, request: GroupNameRequest = Body(...)):
     logger.info(f"Received request to delete group: {request.name} by {request.email}")
 
-    group = crud.db_get_group_id_by_name(request.name, request.email)
-    if not group:
+    group_id = crud.db_get_group_id_by_name(request.name, request.email)
+    if not group_id:
         logger.error(f"Delete group failed: Group {request.name} not found for user {request.email}")
         raise HTTPException(status_code=404, detail="Group not found.")
-
+    group = crud.db_get_group_minimal_details(group_id)
     # Check if the user has any balances
-    user_in_balances = any(request.email in balance for balance in group.balances)
+    user_in_balances = any(request.email in balance for balance in group["balances"])
     if user_in_balances:
         logger.error(f"Delete group failed: User {request.email} has pending balances in group {request.name}")
         raise HTTPException(status_code=400, detail="Cannot leave group with pending balances.")

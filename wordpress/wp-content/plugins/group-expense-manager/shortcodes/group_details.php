@@ -98,7 +98,7 @@ function gem_group_details_shortcode() {
                                         <label for="entry-description">Description:</label>
                                         <input type="text" id="entry-description" class="form-control" required>
                                         <label for="entry-amount">Amount:</label>
-                                        <input type="number" id="entry-amount" class="form-control" required>
+                                        <input type="number" id="entry-amount" class="form-control" required min="1" step="0.01">
                                         <label for="entry-paid-by">Paid By:</label>
                                         <select id="entry-paid-by" class="form-control">';
         foreach ($group_details['members'] as $member) {
@@ -116,8 +116,11 @@ function gem_group_details_shortcode() {
                     <label for="entry-shares">Shares:</label>';
         foreach ($group_details['members'] as $member) {
             $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
-            $output .= '<div>' . $display_name . ':</div>';
-            $output .= '<input type="number" class="form-control share-input" name="share-' . htmlspecialchars($member) . '" placeholder="Amount for ' . $display_name . '">';
+            $output .= '<div class="user-share" style="display: flex; align-items: center; margin-bottom: 10px;">';
+            $output .= '<input type="checkbox" class="user-checkbox" data-user-id="' . htmlspecialchars($member) . '" style="margin-right: 10px;">';
+            $output .= '<span class="user-name" style="width: 60%;">' . htmlspecialchars($display_name) . '</span>';
+            $output .= '<input type="number" class="form-control share-input" name="share-' . htmlspecialchars($member) . '" style="width: 25%; margin-left: auto;" placeholder="Share" min="0" step="0.01" disabled>';
+            $output .= '</div>';
         }
         $output .= '<button type="submit" class="btn btn-primary mt-3">Submit</button>
                                     </form>
@@ -191,19 +194,28 @@ function gem_group_details_shortcode() {
                                 $("#settle-modal").modal("show");
                             });
 
+                            $("#entry-amount").on("input", function() {
+                                var amount = parseFloat($(this).val());
+                                if (isNaN(amount) || amount < 1) {
+                                    $(this).val(1);
+                                }
+                            });
+
                             $("#add-entry-form").submit(function(e) {
                                 e.preventDefault();
                                 var shares = {};
                                 var totalShares = 0;
                                 $(".share-input").each(function() {
                                     var share = parseFloat($(this).val()) || 0;
-                                    shares[$(this).attr("name").split("-")[1]] = share;
+                                    if (share > 0) {
+                                        shares[$(this).attr("name").split("-")[1]] = share.toFixed(2);
+                                    }
                                     totalShares += share;
                                 });
 
                                 var amount = parseFloat($("#entry-amount").val());
-                                if (totalShares !== amount) {
-                                    alert("Shares do not add up to the total amount.");
+                                if (totalShares > amount + 1) {
+                                    alert("The total shares exceed the acceptable range around the total amount. Please correct this.");
                                     return;
                                 }
 
@@ -275,6 +287,27 @@ function gem_group_details_shortcode() {
                                         $("#response-message").html("An error occurred: " + error);
                                     }
                                 });
+                            });
+
+                            $(".user-checkbox").change(function() {
+                                var checkedBoxes = $(".user-checkbox:checked");
+                                var totalAmount = parseFloat($("#entry-amount").val());
+                                var shareAmount = (totalAmount / checkedBoxes.length).toFixed(2);
+
+                                $(".share-input").val("0.00").prop("disabled", true).parent().find(".user-name").css("opacity", "0.5");
+
+                                checkedBoxes.each(function() {
+                                    var input = $(this).parent().find(".share-input");
+                                    input.val(shareAmount).prop("disabled", false);
+                                    input.parent().find(".user-name").css("opacity", "1");
+                                });
+                            });
+
+                            // Reset the form on pop-up close
+                            $("#add-entry-modal").on("hidden.bs.modal", function() {
+                                $("#add-entry-form")[0].reset();
+                                $(".user-checkbox").prop("checked", false);
+                                $(".share-input").val("0.00").prop("disabled", true).parent().find(".user-name").css("opacity", "0.5");
                             });
 
                             $("img.lazy").lazyload({
