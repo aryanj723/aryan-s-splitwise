@@ -81,9 +81,13 @@ function gem_group_details_shortcode() {
 
         $output .= '</tr></tbody></table>';
 
+        // Button Container with added buttons
         $output .= '<div class="button-container">';
+        $output .= '<button id="add-currency-btn" class="btn btn-primary" style="margin-right: 10px;">Add Currency</button>';
         $output .= '<button id="add-entry-btn" class="btn btn-primary" style="margin-right: 10px;">Add Expense</button>';
         $output .= '<button id="settle-btn" class="btn btn-primary" style="margin-right: 10px;">Record Payment</button>';
+        $output .= '<button id="add-user-btn" class="btn btn-primary" style="margin-right: 10px;">Add User</button>';
+        $output .= '<button id="remove-expense-btn" class="btn btn-danger" style="margin-right: 10px;">Remove Expense</button>';
         $output .= '<button id="delete-group-btn" class="btn btn-danger">Leave Group</button>';
         $output .= '</div>';
 
@@ -103,7 +107,7 @@ function gem_group_details_shortcode() {
         $output .= '</tbody></table>';
         $output .= '</div>';
 
-        // Modals for Add Expense and Record Payment
+        // Modals for Add Expense, Record Payment, Add Currency, Add User, and Remove Expense
         $output .= '<div class="modal fade" id="add-entry-modal" tabindex="-1" role="dialog">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
@@ -202,16 +206,116 @@ function gem_group_details_shortcode() {
                         </div>
                     </div>';
 
+        // Add Currency Modal
+        $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="dialog">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Add Currency</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="add-currency-form">
+                                        <label for="currency-name">Currency Name:</label>
+                                        <input type="text" id="currency-name" class="form-control" required>
+                                        <label for="conversion-rate">Conversion Rate:</label>
+                                        <input type="number" id="conversion-rate" class="form-control" required step="0.01" min="0">
+                                        <button type="submit" class="btn btn-primary mt-3">Submit</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <div class="spinner-border text-primary d-none" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>';
+
+        // Add User Modal
+        $output .= '<div class="modal fade" id="add-user-modal" tabindex="-1" role="dialog">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Add User</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="add-user-form">
+                                        <label for="new-member-email">New Member Email:</label>
+                                        <input type="email" id="new-member-email" class="form-control" required>
+                                        <button type="submit" class="btn btn-primary mt-3">Submit</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <div class="spinner-border text-primary d-none" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>';
+
+        // Remove Expense Modal
+        $output .= '<div class="modal fade" id="remove-expense-modal" tabindex="-1" role="dialog">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Remove Expense</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="remove-expense-form">
+                                        <label for="expense-select">Select Expense:</label>
+                                        <select id="expense-select" class="form-control" required>';
+
+foreach ($group_details['entries'] as $entry) {
+    if ($entry['type'] === 'expense' && !$entry['cancelled']) {
+        $output .= '<option value="' . htmlspecialchars($entry['date']) . '">' . htmlspecialchars($entry['description'] . ' - ' . number_format($entry['amount'], 2) . ' ' . $entry['currency']) . '</option>';
+    }
+}
+
+$output .= '           </select>
+                                        <button type="submit" class="btn btn-danger mt-3">Remove</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <div class="spinner-border text-primary d-none" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>';
+
         $output .= '<div id="response-message"></div>';
 
         $output .= '<script>
                         jQuery(document).ready(function($) {
+                            $("#add-currency-btn").click(function() {
+                                $("#add-currency-modal").modal("show");
+                            });
+
                             $("#add-entry-btn").click(function() {
                                 $("#add-entry-modal").modal("show");
                             });
 
                             $("#settle-btn").click(function() {
                                 $("#settle-modal").modal("show");
+                            });
+
+                            $("#add-user-btn").click(function() {
+                                $("#add-user-modal").modal("show");
+                            });
+
+                            $("#remove-expense-btn").click(function() {
+                                $("#remove-expense-modal").modal("show");
                             });
 
                             $("#delete-group-btn").click(function() {
@@ -242,99 +346,103 @@ function gem_group_details_shortcode() {
                                 }
                             });
 
+                            $("#add-currency-form").submit(function(e) {
+                                e.preventDefault();
+                                var currencyName = $("#currency-name").val();
+                                var conversionRate = $("#conversion-rate").val();
+
+                                $(".modal-footer .spinner-border").removeClass("d-none");
+
+                                $.ajax({
+                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    type: "POST",
+                                    data: {
+                                        action: "gem_add_currency",
+                                        group_name: "' . rawurlencode($group_name) . '",
+                                        email: "' . $email . '",
+                                        currency: currencyName,
+                                        conversion_rate: conversionRate
+                                    },
+                                    success: function(response) {
+                                        $(".modal-footer .spinner-border").addClass("d-none");
+                                        $("#add-currency-modal").modal("hide");
+                                        $("#response-message").html(response.data);
+                                        setTimeout(function() {
+                                            location.reload();
+                                        }, 2000);
+                                    },
+                                    error: function(error) {
+                                        $(".modal-footer .spinner-border").addClass("d-none");
+                                        $("#response-message").html("An error occurred: " + error);
+                                    }
+                                });
+                            });
+
+                            $("#add-user-form").submit(function(e) {
+                                e.preventDefault();
+                                var newMemberEmail = $("#new-member-email").val();
+
+                                $(".modal-footer .spinner-border").removeClass("d-none");
+
+                                $.ajax({
+                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    type: "POST",
+                                    data: {
+                                        action: "gem_add_user",
+                                        group_name: "' . rawurlencode($group_name) . '",
+                                        email: "' . $email . '",
+                                        new_member_email: newMemberEmail
+                                    },
+                                    success: function(response) {
+                                        $(".modal-footer .spinner-border").addClass("d-none");
+                                        $("#add-user-modal").modal("hide");
+                                        $("#response-message").html(response.data);
+                                        setTimeout(function() {
+                                            location.reload();
+                                        }, 2000);
+                                    },
+                                    error: function(error) {
+                                        $(".modal-footer .spinner-border").addClass("d-none");
+                                        $("#response-message").html("An error occurred: " + error);
+                                    }
+                                });
+                            });
+
+                            $("#remove-expense-form").submit(function(e) {
+                                e.preventDefault();
+                                var expenseDatetime = $("#expense-select").val();
+
+                                $(".modal-footer .spinner-border").removeClass("d-none");
+
+                                $.ajax({
+                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    type: "POST",
+                                    data: {
+                                        action: "gem_remove_expense",
+                                        group_name: "' . rawurlencode($group_name) . '",
+                                        email: "' . $email . '",
+                                        expense_datetime: expenseDatetime
+                                    },
+                                    success: function(response) {
+                                        $(".modal-footer .spinner-border").addClass("d-none");
+                                        $("#remove-expense-modal").modal("hide");
+                                        $("#response-message").html(response.data);
+                                        setTimeout(function() {
+                                            location.reload();
+                                        }, 2000);
+                                    },
+                                    error: function(error) {
+                                        $(".modal-footer .spinner-border").addClass("d-none");
+                                        $("#response-message").html("An error occurred: " + error);
+                                    }
+                                });
+                            });
+
                             $("#entry-amount").on("input", function() {
                                 var amount = parseFloat($(this).val());
                                 if (isNaN(amount) || amount < 1) {
                                     $(this).val(1);
                                 }
-                            });
-
-                            $("#add-entry-form").submit(function(e) {
-                                e.preventDefault();
-                                var shares = {};
-                                var totalShares = 0;
-                                $(".share-input").each(function() {
-                                    var share = parseFloat($(this).val()) || 0;
-                                    if (share > 0) {
-                                        shares[$(this).attr("name").split("-")[1]] = share.toFixed(2);
-                                    }
-                                    totalShares += share;
-                                });
-
-                                var amount = parseFloat($("#entry-amount").val());
-                                if (totalShares > amount + 1) {
-                                    alert("The total shares exceed the acceptable range around the total amount. Please correct this.");
-                                    return;
-                                }
-
-                                $(".modal-footer .spinner-border").removeClass("d-none");
-
-                                $.ajax({
-                                    url: "' . admin_url('admin-ajax.php') . '",
-                                    type: "POST",
-                                    data: {
-                                        action: "gem_add_expense",
-                                        group_name: "' . rawurlencode($group_name) . '",
-                                        email: "' . $email . '",
-                                        description: $("#entry-description").val(),
-                                        amount: $("#entry-amount").val(),
-                                        paid_by: $("#entry-paid-by").val(),
-                                        currency: $("#entry-currency").val(),
-                                        shares: shares
-                                    },
-                                    success: function(response) {
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-                                        $("#add-entry-modal").modal("hide");
-                                        $("#response-message").html(response.data);
-                                        setTimeout(function() {
-                                            location.reload();
-                                        }, 2000);
-                                    },
-                                    error: function(error) {
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-                                        $("#response-message").html("An error occurred: " + error);
-                                    }
-                                });
-                            });
-
-                            $("#settle-form").submit(function(e) {
-                                e.preventDefault();
-
-                                var paid_by = $("#payment-paid-by").val();
-                                var paid_to = $("#payment-paid-to").val();
-                                if (paid_by === paid_to) {
-                                    alert("You cannot pay yourself.");
-                                    return;
-                                }
-
-                                $(".modal-footer .spinner-border").removeClass("d-none");
-
-                                $.ajax({
-                                    url: "' . admin_url('admin-ajax.php') . '",
-                                    type: "POST",
-                                    data: {
-                                        action: "gem_add_payment",
-                                        group_name: "' . rawurlencode($group_name) . '",
-                                        email: "' . $email . '",
-                                        description: $("#payment-description").val(),
-                                        amount: $("#payment-amount").val(),
-                                        paid_by: paid_by,
-                                        paid_to: paid_to,
-                                        currency: $("#payment-currency").val()
-                                    },
-                                    success: function(response) {
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-                                        $("#settle-modal").modal("hide");
-                                        $("#response-message").html(response.data);
-                                        setTimeout(function() {
-                                            location.reload();
-                                        }, 2000);
-                                    },
-                                    error: function(error) {
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-                                        $("#response-message").html("An error occurred: " + error);
-                                    }
-                                });
                             });
 
                             $(".user-checkbox").change(function() {
@@ -352,8 +460,8 @@ function gem_group_details_shortcode() {
                             });
 
                             // Reset the form on pop-up close
-                            $("#add-entry-modal").on("hidden.bs.modal", function() {
-                                $("#add-entry-form")[0].reset();
+                            $("#add-entry-modal, #settle-modal, #add-currency-modal, #add-user-modal, #remove-expense-modal").on("hidden.bs.modal", function() {
+                                $(this).find("form")[0].reset();
                                 $(".user-checkbox").prop("checked", false);
                                 $(".share-input").val("0.00").prop("disabled", true).parent().find(".user-name").css("opacity", "0.5");
                             });

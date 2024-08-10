@@ -338,4 +338,59 @@ function gem_delete_group() {
     }
 }
 
-?>
+// Handle AJAX requests for removing an expense
+// Handle AJAX requests for removing an expense
+add_action('wp_ajax_gem_remove_expense', 'gem_remove_expense');
+add_action('wp_ajax_nopriv_gem_remove_expense', 'gem_remove_expense');
+
+function gem_remove_expense() {
+    if (!is_user_logged_in()) {
+        wp_send_json_error('You must be logged in to remove an expense.');
+        return;
+    }
+
+    $group_name = isset($_POST['group_name']) ? sanitize_text_field($_POST['group_name']) : '';
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $expense_datetime = isset($_POST['expense_datetime']) ? sanitize_text_field($_POST['expense_datetime']) : '';
+
+    if (empty($group_name) || empty($email) || empty($expense_datetime)) {
+        wp_send_json_error('Please provide all required fields.');
+        return;
+    }
+
+    $payload = array(
+        'group_name' => $group_name,
+        'member_email' => $email,
+        'expense_datetime' => $expense_datetime
+    );
+
+    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/remove_expense', array(
+        'method'    => 'POST',
+        'body'      => json_encode($payload),
+        'headers'   => array(
+            'Content-Type' => 'application/json',
+        ),
+    ));
+
+    if (is_wp_error($response)) {
+        $error_message = $response->get_error_message();
+        wp_send_json_error("Something went wrong: $error_message");
+    } else {
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        // Log the response for inspection
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Remove Expense Response: ' . print_r($data, true));
+        }
+
+        if ($status_code == 200) {
+            wp_send_json_success('Expense removed successfully.');
+        } elseif (isset($data['message'])) { // Check if the "message" key exists
+            wp_send_json_error($data['message']);
+        } else {
+            wp_send_json_error('Failed to remove expense.');
+        }
+    }
+}
