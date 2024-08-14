@@ -346,6 +346,45 @@ function gem_group_details_shortcode() {
                                 });
                             });
 
+                            $("#settle-form").on("submit", function(event) {
+                                event.preventDefault();
+
+                                var groupName = "' . $group_name . '";
+                                var userEmail = "' . $email . '";
+                                var description = $("#payment-description").val();
+                                var amount = parseFloat($("#payment-amount").val());
+                                var paidBy = $("#payment-paid-by").val();
+                                var paidTo = $("#payment-paid-to").val();
+                                var currency = $("#payment-currency").val();
+
+                                // AJAX call to record the payment
+                                $.ajax({
+                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    type: "POST",
+                                    data: {
+                                        action: "gem_add_payment",
+                                        group_name: groupName,
+                                        email: userEmail,
+                                        description: description,
+                                        amount: amount,
+                                        paid_by: paidBy,
+                                        paid_to: paidTo,
+                                        currency: currency
+                                    },
+                                    success: function(response) {
+                                        if (response.success) {
+                                            alert("Payment recorded successfully!");
+                                            location.reload();
+                                        } else {
+                                            alert("Failed to record payment: " + response.data);
+                                        }
+                                    },
+                                    error: function(error) {
+                                        alert("An error occurred: " + error.statusText);
+                                    }
+                                });
+                            });
+
                             $("#add-currency-btn").click(function() {
                                 $("#add-currency-modal").modal("show");
                             });
