@@ -24,7 +24,7 @@ function gem_group_details_shortcode() {
 
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
-        error_log("Error: $error_message");
+        error_log("Error fetching group details: $error_message");
         return "Something went wrong: $error_message";
     } else {
         $group_details = json_decode(wp_remote_retrieve_body($response), true);
@@ -374,7 +374,7 @@ function gem_group_details_shortcode() {
                                         type: "POST",
                                         data: {
                                             action: "gem_delete_group",
-                                            group_name: "' . rawurlencode($group_name) . '",
+                                            group_name: "' . $group_name . '",
                                             email: "' . $email . '"
                                         },
                                         success: function(response) {
@@ -406,7 +406,7 @@ function gem_group_details_shortcode() {
                                     type: "POST",
                                     data: {
                                         action: "gem_add_currency",
-                                        group_name: "' . rawurlencode($group_name) . '",
+                                        group_name: "' . $group_name . '",
                                         email: "' . $email . '",
                                         currency: currencyName,
                                         conversion_rate: conversionRate
@@ -437,7 +437,7 @@ function gem_group_details_shortcode() {
                                     type: "POST",
                                     data: {
                                         action: "gem_add_user",
-                                        group_name: "' . rawurlencode($group_name) . '",
+                                        group_name: "' . $group_name . '",
                                         email: "' . $email . '",
                                         new_member_email: newMemberEmail
                                     },
@@ -467,7 +467,7 @@ function gem_group_details_shortcode() {
                                     type: "POST",
                                     data: {
                                         action: "gem_remove_expense",
-                                        group_name: "' . rawurlencode($group_name) . '",
+                                        group_name: "' . $group_name . '",
                                         email: "' . $email . '",
                                         expense_datetime: expenseDatetime
                                     },
