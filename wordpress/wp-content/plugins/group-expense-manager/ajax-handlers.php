@@ -117,6 +117,7 @@ function gem_add_expense() {
 
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
+        error_log("Error adding expense: $error_message");
         wp_send_json_error("Something went wrong: $error_message");
     } else {
         $status_code = wp_remote_retrieve_response_code($response);
@@ -124,7 +125,7 @@ function gem_add_expense() {
         $data = json_decode($body, true);
         if ($status_code == 200) {
             wp_send_json_success('Expense added successfully.');
-        } elseif (isset($data['message'])) { // Check if the "message" key exists
+        } elseif (isset($data['message'])) { 
             wp_send_json_error($data['message']);
         } else {
             wp_send_json_error('Failed to add expense.');
@@ -339,7 +340,6 @@ function gem_delete_group() {
 }
 
 // Handle AJAX requests for removing an expense
-// Handle AJAX requests for removing an expense
 add_action('wp_ajax_gem_remove_expense', 'gem_remove_expense');
 add_action('wp_ajax_nopriv_gem_remove_expense', 'gem_remove_expense');
 
@@ -394,3 +394,5 @@ function gem_remove_expense() {
         }
     }
 }
+
+?>

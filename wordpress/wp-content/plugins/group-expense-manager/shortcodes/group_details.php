@@ -24,9 +24,11 @@ function gem_group_details_shortcode() {
 
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
+        error_log("Error: $error_message");
         return "Something went wrong: $error_message";
     } else {
         $group_details = json_decode(wp_remote_retrieve_body($response), true);
+
         $output = '<h2>' . htmlspecialchars($group_details['name']) . '</h2>';
 
         $output .= '<table class="table">';
@@ -275,13 +277,13 @@ function gem_group_details_shortcode() {
                                         <label for="expense-select">Select Expense:</label>
                                         <select id="expense-select" class="form-control" required>';
 
-foreach ($group_details['entries'] as $entry) {
-    if ($entry['type'] === 'expense' && !$entry['cancelled']) {
-        $output .= '<option value="' . htmlspecialchars($entry['date']) . '">' . htmlspecialchars($entry['description'] . ' - ' . number_format($entry['amount'], 2) . ' ' . $entry['currency']) . '</option>';
-    }
-}
+        foreach ($group_details['entries'] as $entry) {
+            if ($entry['type'] === 'expense' && !$entry['cancelled']) {
+                $output .= '<option value="' . htmlspecialchars($entry['date']) . '">' . htmlspecialchars($entry['description'] . ' - ' . number_format($entry['amount'], 2) . ' ' . $entry['currency']) . '</option>';
+            }
+        }
 
-$output .= '           </select>
+        $output .= '           </select>
                                         <button type="submit" class="btn btn-danger mt-3">Remove</button>
                                     </form>
                                 </div>
@@ -298,6 +300,52 @@ $output .= '           </select>
 
         $output .= '<script>
                         jQuery(document).ready(function($) {
+                            $("#add-entry-form").on("submit", function(event) {
+                                event.preventDefault();
+
+                                var groupName = "' . $group_name . '";
+                                var userEmail = "' . $email . '";
+                                var description = $("#entry-description").val();
+                                var amount = parseFloat($("#entry-amount").val());
+                                var paidBy = $("#entry-paid-by").val();
+                                var currency = $("#entry-currency").val();
+
+                                // Collect shares
+                                var shares = {};
+                                $(".user-checkbox:checked").each(function() {
+                                    var userId = $(this).data("user-id");
+                                    var shareAmount = parseFloat($(this).closest(".user-share").find(".share-input").val());
+                                    shares[userId] = shareAmount;
+                                });
+
+                                // AJAX call to add the expense
+                                $.ajax({
+                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    type: "POST",
+                                    data: {
+                                        action: "gem_add_expense",
+                                        group_name: groupName,
+                                        email: userEmail,
+                                        description: description,
+                                        amount: amount,
+                                        paid_by: paidBy,
+                                        shares: shares,
+                                        currency: currency
+                                    },
+                                    success: function(response) {
+                                        if (response.success) {
+                                            alert("Expense added successfully!");
+                                            location.reload();
+                                        } else {
+                                            alert("Failed to add expense: " + response.data);
+                                        }
+                                    },
+                                    error: function(error) {
+                                        alert("An error occurred: " + error.statusText);
+                                    }
+                                });
+                            });
+
                             $("#add-currency-btn").click(function() {
                                 $("#add-currency-modal").modal("show");
                             });
