@@ -111,22 +111,64 @@ function gem_group_details_shortcode() {
 
         // Modals for Add Expense, Record Payment, Add Currency, Add User, and Remove Expense
         $output .= '<div class="modal fade" id="add-entry-modal" tabindex="-1" role="dialog">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Add Expense</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <form id="add-entry-form">
-                                        <label for="entry-description">Description:</label>
-                                        <input type="text" id="entry-description" class="form-control" required>
-                                        <label for="entry-amount">Amount:</label>
-                                        <input type="number" id="entry-amount" class="form-control" required min="1" step="0.01">
-                                        <label for="entry-paid-by">Paid By:</label>
-                                        <select id="entry-paid-by" class="form-control">';
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Expense</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="add-entry-form">
+                    <label for="entry-description">Description:</label>
+                    <input type="text" id="entry-description" class="form-control" required>
+                    
+                    <label for="entry-amount">Amount:</label>
+                    <input type="number" id="entry-amount" class="form-control" required min="1" step="0.01">
+                    
+                    <label for="entry-paid-by">Paid By:</label>
+                    <select id="entry-paid-by" class="form-control">';
+
+foreach ($group_details['members'] as $member) {
+    $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+    $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
+}
+
+$output .= '</select>
+                    
+                    <label for="entry-currency">Currency:</label>
+                    <select id="entry-currency" class="form-control">
+                        <option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
+
+foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
+    $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
+}
+
+$output .= '</select>
+                    
+                    <label for="entry-shares">Shares:</label>';
+
+foreach ($group_details['members'] as $member) {
+    $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+    $output .= '<div class="user-share" style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <input type="checkbox" class="user-checkbox" data-user-id="' . htmlspecialchars($member) . '" style="margin-right: 10px;">
+                    <span class="user-name" style="width: 60%;">' . htmlspecialchars($display_name) . '</span>
+                    <input type="number" class="form-control share-input" name="share-' . htmlspecialchars($member) . '" style="width: 25%; margin-left: auto;" placeholder="Share" min="0" step="0.01" disabled>
+                </div>';
+}
+
+$output .= '<button type="submit" class="btn btn-primary mt-3">Submit</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="spinner-border text-primary d-none" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>';
         foreach ($group_details['members'] as $member) {
             $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
             $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
@@ -303,24 +345,61 @@ function gem_group_details_shortcode() {
                             $("#add-entry-form").on("submit", function(event) {
                                 event.preventDefault();
 
-                                var groupName = "' . $group_name . '";
-                                var userEmail = "' . $email . '";
-                                var description = $("#entry-description").val();
+                                var groupName = "' . esc_js($group_name) . '";
+                                var userEmail = "' . esc_js($email) . '";
+                                var description = $("#entry-description").val().trim();
                                 var amount = parseFloat($("#entry-amount").val());
                                 var paidBy = $("#entry-paid-by").val();
                                 var currency = $("#entry-currency").val();
+                                var validShares = true;
+                                var totalShare = 0;
+
+                                // Validate description
+                                if (description === "") {
+                                    alert("Description cannot be empty.");
+                                    return;
+                                }
+
+                                // Check if description exceeds 20 characters
+                                if (description.length > 20) {
+                                    alert("Description must not exceed 20 characters.");
+                                    return;
+                                }
+
+                                // Validate amount
+                                if (isNaN(amount) || amount < 1) {
+                                    alert("Amount must be at least 1.");
+                                    return;
+                                }
 
                                 // Collect shares
                                 var shares = {};
                                 $(".user-checkbox:checked").each(function() {
                                     var userId = $(this).data("user-id");
                                     var shareAmount = parseFloat($(this).closest(".user-share").find(".share-input").val());
+
+                                    if (isNaN(shareAmount) || shareAmount < 0) {
+                                        alert("Shares must be at least 0 and must be valid.");
+                                        validShares = false;
+                                        return false;
+                                    }
+
                                     shares[userId] = shareAmount;
+                                    totalShare += shareAmount;
                                 });
+
+                                // Validate if shares add up correctly
+                                if (!validShares || Math.abs(totalShare - amount) > 1) {
+                                    alert("Shares do not add up to the total amount.");
+                                    return;
+                                }
+
+                                // Show spinner
+                                $(".modal-footer .spinner-border").removeClass("d-none");
 
                                 // AJAX call to add the expense
                                 $.ajax({
-                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    url: "' . esc_url(admin_url('admin-ajax.php')) . '",
                                     type: "POST",
                                     data: {
                                         action: "gem_add_expense",
@@ -333,7 +412,14 @@ function gem_group_details_shortcode() {
                                         currency: currency
                                     },
                                     success: function(response) {
+                                        // Hide spinner
+                                        $(".modal-footer .spinner-border").addClass("d-none");
+
                                         if (response.success) {
+                                            // Close the modal first
+                                            $("#add-entry-modal").modal("hide");
+
+                                            // After modal is closed, show the success message
                                             alert("Expense added successfully!");
                                             location.reload();
                                         } else {
@@ -341,10 +427,13 @@ function gem_group_details_shortcode() {
                                         }
                                     },
                                     error: function(error) {
+                                        // Hide spinner in case of error
+                                        $(".modal-footer .spinner-border").addClass("d-none");
                                         alert("An error occurred: " + error.statusText);
                                     }
                                 });
                             });
+
 
                             $("#settle-form").on("submit", function(event) {
                                 event.preventDefault();
