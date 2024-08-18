@@ -100,8 +100,8 @@ function gem_group_details_shortcode() {
         $output .= '</div>';
 
         $output .= '<div id="group-entries">';
-        $output .= '<h4>Expenses</h4>' . gem_display_expenses($group_details['entries']);
-        $output .= '<h4>Payments</h4>' . gem_display_payments($group_details['entries']);
+        $output .= '<h4>Expenses</h4>' . gem_display_expenses(array_reverse($group_details['entries']));
+        $output .= '<h4>Payments</h4>' . gem_display_payments(array_reverse($group_details['entries']));
         $output .= '</div>';
 
         // Logs Section
