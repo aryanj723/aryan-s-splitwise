@@ -2,7 +2,7 @@
 /*
 Plugin Name: Group Expense Manager
 Description: Manages groups and expenses, integrates a backend server
-Version: 1.0
+Version: 2.2
 Author: Aryan
 */
 

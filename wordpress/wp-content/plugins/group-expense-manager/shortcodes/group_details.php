@@ -30,11 +30,22 @@ function gem_group_details_shortcode() {
         $group_details = json_decode(wp_remote_retrieve_body($response), true);
 
         // Parse the group name and creation date
-        list($group_name, $creation_timestamp) = explode('$', $group_name_raw);
-        $creation_date = explode('T', $creation_timestamp)[0]; // Get the date and ignore the time
+        $group_name_parts = explode('$', $group_name_raw);
+        
+        // Check if $group_name_raw contains the expected number of parts
+        if (count($group_name_parts) == 2) {
+            $group_name = $group_name_parts[0];
+            $creation_timestamp = $group_name_parts[1];
+            $creation_date = explode('T', $creation_timestamp)[0]; // Get the date and ignore the time
 
-        // Display the formatted group name and creation date
-        $output = '<h2>Group: ' . htmlspecialchars($group_name) . ' ; Created: ' . htmlspecialchars($creation_date) . '</h2>';
+            // Display the formatted group name and creation date
+            $output = '<h2>Group: ' . htmlspecialchars($group_name) . ' ; Created: ' . htmlspecialchars($creation_date) . '</h2>';
+        } else {
+            // Fallback if the group name does not contain a valid timestamp
+            $group_name = $group_name_raw;
+            $output = '<h2>Group: ' . htmlspecialchars($group_name) . ' ; Created: Unknown</h2>';
+        }
+
         $group_name = sanitize_text_field($_GET['group_name']);
 
         $output .= '<table class="table">';

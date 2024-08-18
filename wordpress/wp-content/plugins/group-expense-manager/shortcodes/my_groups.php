@@ -24,19 +24,31 @@ function gem_my_groups_shortcode() {
         $groups = json_decode(wp_remote_retrieve_body($response), true);
         $output = '<div class="container">';
         $output .= '<div class="row">';
+        
         foreach ($groups as $group_raw) {
-            // Parse the group name and creation date
-            list($group_name, $creation_timestamp) = explode('$', $group_raw);
-            $creation_date_parts = explode('T', $creation_timestamp);
-            $creation_date_str = $creation_date_parts[0];
-            $creation_time_str = explode('.', $creation_date_parts[1])[0]; // Removing microseconds
-            
-            // Format the date and time for user-friendly display
-            try {
-                $datetime = new DateTime($creation_date_str . ' ' . $creation_time_str);
-                $formatted_date = $datetime->format('M j, Y \a\t g:i:s A \U\T\C');
-            } catch (Exception $e) {
-                $formatted_date = $group_raw; // Fallback to original data if parsing fails
+            // Ensure that $group_raw contains a '$' for splitting
+            if (strpos($group_raw, '$') !== false) {
+                list($group_name, $creation_timestamp) = explode('$', $group_raw);
+
+                // Validate if $creation_timestamp exists and is in expected format
+                if (isset($creation_timestamp) && strpos($creation_timestamp, 'T') !== false) {
+                    $creation_date_parts = explode('T', $creation_timestamp);
+                    $creation_date_str = $creation_date_parts[0];
+                    $creation_time_str = explode('.', $creation_date_parts[1])[0]; // Removing microseconds
+
+                    // Format the date and time for user-friendly display
+                    try {
+                        $datetime = new DateTime($creation_date_str . ' ' . $creation_time_str);
+                        $formatted_date = $datetime->format('M j, Y \a\t g:i:s A \U\T\C');
+                    } catch (Exception $e) {
+                        $formatted_date = $group_raw; // Fallback to original data if parsing fails
+                    }
+                } else {
+                    $formatted_date = 'Unknown creation date';
+                }
+            } else {
+                $group_name = $group_raw;
+                $formatted_date = 'Unknown creation date';
             }
 
             // Display the group name and creation date
