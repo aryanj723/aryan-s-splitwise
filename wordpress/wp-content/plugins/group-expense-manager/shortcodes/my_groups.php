@@ -83,9 +83,6 @@ function gem_my_groups_shortcode() {
                             email: "' . $email . '"
                         },
                         success: function(response) {
-                            console.log("AJAX request successful for group: ' . $group_raw . '");
-                            console.log("Response data:", response);
-                
                             if (response.success) {
                                 var balances = response.data.balances;
                                 var localCurrency = response.data.local_currency;
@@ -173,9 +170,6 @@ function gem_get_group_details() {
     if (is_wp_error($response)) {
         wp_send_json_error(array('message' => 'Error fetching group details'));
     } else {
-        // Log the API response
-        error_log("API Response: " . wp_remote_retrieve_body($response));
-        
         $group_details = json_decode(wp_remote_retrieve_body($response), true);
         wp_send_json_success($group_details);
     }
