@@ -84,6 +84,9 @@ function gem_group_details_shortcode() {
                 $output .= '<li>' . htmlspecialchars($debtor ?? '') . ' should pay ' . htmlspecialchars($balance[2] ?? '') . ' ' . $currency . ' to ' . htmlspecialchars($creditor ?? '') . '</li>';
             }
             $output .= '</ul>';
+        } else {
+            // Display when everyone is settled
+            $output .= '<p>Everyone is settled</p>';
         }
         $output .= '</td>'; // Close Balances column
 
