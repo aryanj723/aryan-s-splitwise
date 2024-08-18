@@ -145,7 +145,7 @@ function gem_add_payment() {
 
     $group_name = isset($_POST['group_name']) ? sanitize_text_field($_POST['group_name']) : '';
     $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
-    $description = isset($_POST['description']) ? sanitize_text_field($_POST['description']) : '';
+    $description = '';
     $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
     $paid_by = isset($_POST['paid_by']) ? sanitize_email($_POST['paid_by']) : '';
     $paid_to = isset($_POST['paid_to']) ? sanitize_email($_POST['paid_to']) : '';
@@ -153,7 +153,7 @@ function gem_add_payment() {
 
     error_log("Debugging Record Payment: group_name = $group_name, email = $email, description = $description, amount = $amount, paid_by = $paid_by, paid_to = $paid_to, currency = $currency");
 
-    if (empty($group_name) || empty($email) || empty($description) || empty($amount) || empty($paid_by) || empty($paid_to) || empty($currency)) {
+    if (empty($group_name) || empty($email) || empty($amount) || empty($paid_by) || empty($paid_to) || empty($currency)) {
         wp_send_json_error('Please provide all required fields.');
         return;
     }

@@ -122,7 +122,7 @@ function gem_group_details_shortcode() {
             <div class="modal-body">
                 <form id="add-entry-form">
                     <label for="entry-description">Description:</label>
-                    <input type="text" id="entry-description" class="form-control" required>
+                    <input type="text" id="entry-description" class="form-control" required maxlength="20">
                     
                     <label for="entry-amount">Amount:</label>
                     <input type="number" id="entry-amount" class="form-control" required min="1" step="0.01">
@@ -169,86 +169,61 @@ $output .= '<button type="submit" class="btn btn-primary mt-3">Submit</button>
         </div>
     </div>
 </div>';
-        foreach ($group_details['members'] as $member) {
-            $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
-            $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
-        }
-        $output .= '</select>
-                    <label for="entry-currency">Currency:</label>
-                    <select id="entry-currency" class="form-control">';
-        $output .= '<option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
-        foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
-            $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
-        }
-        $output .= '</select>
-                    <label for="entry-shares">Shares:</label>';
-        foreach ($group_details['members'] as $member) {
-            $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
-            $output .= '<div class="user-share" style="display: flex; align-items: center; margin-bottom: 10px;">';
-            $output .= '<input type="checkbox" class="user-checkbox" data-user-id="' . htmlspecialchars($member) . '" style="margin-right: 10px;">';
-            $output .= '<span class="user-name" style="width: 60%;">' . htmlspecialchars($display_name) . '</span>';
-            $output .= '<input type="number" class="form-control share-input" name="share-' . htmlspecialchars($member) . '" style="width: 25%; margin-left: auto;" placeholder="Share" min="0" step="0.01" disabled>';
-            $output .= '</div>';
-        }
-        $output .= '<button type="submit" class="btn btn-primary mt-3">Submit</button>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <div class="spinner-border text-primary d-none" role="status">
-                                        <span class="sr-only">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>';
 
-        $output .= '<div class="modal fade" id="settle-modal" tabindex="-1" role="dialog">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Record Payment</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <form id="settle-form">
-                                        <label for="payment-description">Description:</label>
-                                        <input type="text" id="payment-description" class="form-control" required>
-                                        <label for="payment-amount">Amount:</label>
-                                        <input type="number" id="payment-amount" class="form-control" required>
-                                        <label for="payment-paid-by">Paid By:</label>
-                                        <select id="payment-paid-by" class="form-control">';
-        foreach ($group_details['members'] as $member) {
-            $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
-            $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
-        }
-        $output .= '</select>
-                                        <label for="payment-paid-to">Paid To:</label>
-                                        <select id="payment-paid-to" class="form-control">';
-        foreach ($group_details['members'] as $member) {
-            $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
-            $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
-        }
-        $output .= '</select>
-                                        <label for="payment-currency">Currency:</label>
-                                        <select id="payment-currency" class="form-control">';
-        $output .= '<option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
-        foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
-            $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
-        }
-        $output .= '</select>
-                                        <button type="submit" class="btn btn-primary mt-3">Submit</button>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <div class="spinner-border text-primary d-none" role="status">
-                                        <span class="sr-only">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>';
+
+$output .= '<div class="modal fade" id="settle-modal" tabindex="-1" role="dialog">
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Record Payment</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="settle-form">
+                <label for="payment-amount">Amount:</label>
+                <input type="number" id="payment-amount" class="form-control" required min="1" step="0.01">
+                
+                <label for="payment-paid-by">Paid By:</label>
+                <select id="payment-paid-by" class="form-control">';
+foreach ($group_details['members'] as $member) {
+$display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+$output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
+}
+
+$output .= '</select>
+                
+                <label for="payment-paid-to">Paid To:</label>
+                <select id="payment-paid-to" class="form-control">';
+foreach ($group_details['members'] as $member) {
+$display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+$output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
+}
+
+$output .= '</select>
+                
+                <label for="payment-currency">Currency:</label>
+                <select id="payment-currency" class="form-control">
+                    <option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
+foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
+$output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
+}
+
+$output .= '</select>
+                
+                <button type="submit" class="btn btn-primary mt-3">Submit</button>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <div class="spinner-border text-primary d-none" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+</div>';
+
 
         // Add Currency Modal
         $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="dialog">
@@ -436,43 +411,75 @@ $output .= '<button type="submit" class="btn btn-primary mt-3">Submit</button>
 
 
                             $("#settle-form").on("submit", function(event) {
-                                event.preventDefault();
+    event.preventDefault();
 
-                                var groupName = "' . $group_name . '";
-                                var userEmail = "' . $email . '";
-                                var description = $("#payment-description").val();
-                                var amount = parseFloat($("#payment-amount").val());
-                                var paidBy = $("#payment-paid-by").val();
-                                var paidTo = $("#payment-paid-to").val();
-                                var currency = $("#payment-currency").val();
+    var groupName = "' . esc_js($group_name) . '";
+    var userEmail = "' . esc_js($email) . '";
+    var description = ""; // Set description to empty string
+    var amount = parseFloat($("#payment-amount").val()).toFixed(2);
+    var paidBy = $("#payment-paid-by").val();
+    var paidTo = $("#payment-paid-to").val();
+    var currency = $("#payment-currency").val();
 
-                                // AJAX call to record the payment
-                                $.ajax({
-                                    url: "' . admin_url('admin-ajax.php') . '",
-                                    type: "POST",
-                                    data: {
-                                        action: "gem_add_payment",
-                                        group_name: groupName,
-                                        email: userEmail,
-                                        description: description,
-                                        amount: amount,
-                                        paid_by: paidBy,
-                                        paid_to: paidTo,
-                                        currency: currency
-                                    },
-                                    success: function(response) {
-                                        if (response.success) {
-                                            alert("Payment recorded successfully!");
-                                            location.reload();
-                                        } else {
-                                            alert("Failed to record payment: " + response.data);
-                                        }
-                                    },
-                                    error: function(error) {
-                                        alert("An error occurred: " + error.statusText);
-                                    }
-                                });
-                            });
+    // Validate amount
+    if (isNaN(amount) || amount <= 0) {
+        alert("Amount must be greater than 0.");
+        return;
+    }
+
+    // Ensure only up to 2 decimal places
+    if (amount.toString().split(".")[1] && amount.toString().split(".")[1].length > 2) {
+        alert("Amount must be a valid number with up to 2 decimal places.");
+        return;
+    }
+
+    // Check that payer and payee are different
+    if (paidBy === paidTo) {
+        alert("The payer and payee must be different.");
+        return;
+    }
+
+    // Show spinner
+    $(".modal-footer .spinner-border").removeClass("d-none");
+
+    // AJAX call to record the payment
+    $.ajax({
+        url: "' . esc_url(admin_url('admin-ajax.php')) . '",
+        type: "POST",
+        data: {
+            action: "gem_add_payment",
+            group_name: groupName,
+            email: userEmail,
+            description: description, // Pass empty string
+            amount: amount,
+            paid_by: paidBy,
+            paid_to: paidTo,
+            currency: currency
+        },
+        success: function(response) {
+            // Hide spinner
+            $(".modal-footer .spinner-border").addClass("d-none");
+
+            if (response.success) {
+                // Close the modal first
+                $("#settle-modal").modal("hide");
+
+                // After modal is closed, show the success message
+                alert("Payment recorded successfully!");
+                location.reload();
+            } else {
+                alert("Failed to record payment: " + response.data);
+            }
+        },
+        error: function(error) {
+            // Hide spinner in case of error
+            $(".modal-footer .spinner-border").addClass("d-none");
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+});
+
+
 
                             $("#add-currency-btn").click(function() {
                                 $("#add-currency-modal").modal("show");
