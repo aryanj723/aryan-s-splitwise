@@ -35,7 +35,7 @@ function gem_group_details_shortcode() {
 
         // Display the formatted group name and creation date
         $output = '<h2>Group: ' . htmlspecialchars($group_name) . ' ; Created: ' . htmlspecialchars($creation_date) . '</h2>';
-
+        $group_name = sanitize_text_field($_GET['group_name']);
 
         $output .= '<table class="table">';
         $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances</th></tr></thead>';
