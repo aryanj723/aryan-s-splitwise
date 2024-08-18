@@ -227,31 +227,37 @@ $output .= '</select>
 
         // Add Currency Modal
         $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="dialog">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Add Currency</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Add Currency</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add-currency-form">
+                                <label for="currency-name">Currency Name:</label>
+                                <input type="text" id="currency-name" class="form-control" required placeholder="Enter new currency (e.g., EUR)">
+                                
+                                <label for="conversion-rate-display">Conversion Rate:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">1 <span id="currency-display">[Currency]</span> = </span>
+                                    <input type="number" id="conversion-rate" class="form-control" required placeholder="Conversion rate" step="0.0001" min="0.0001" max="99999.9999">
+                                    <span class="input-group-text">' . htmlspecialchars($group_details['local_currency']) . '</span>
                                 </div>
-                                <div class="modal-body">
-                                    <form id="add-currency-form">
-                                        <label for="currency-name">Currency Name:</label>
-                                        <input type="text" id="currency-name" class="form-control" required>
-                                        <label for="conversion-rate">Conversion Rate:</label>
-                                        <input type="number" id="conversion-rate" class="form-control" required step="0.01" min="0">
-                                        <button type="submit" class="btn btn-primary mt-3">Submit</button>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <div class="spinner-border text-primary d-none" role="status">
-                                        <span class="sr-only">Loading...</span>
-                                    </div>
-                                </div>
+                                
+                                <button type="submit" class="btn btn-primary mt-3">Submit</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="spinner-border text-primary d-none" role="status">
+                                <span class="sr-only">Loading...</span>
                             </div>
                         </div>
-                    </div>';
+                    </div>
+                </div>
+            </div>';
 
         // Add User Modal
         $output .= '<div class="modal fade" id="add-user-modal" tabindex="-1" role="dialog">
@@ -411,73 +417,73 @@ $output .= '</select>
 
 
                             $("#settle-form").on("submit", function(event) {
-    event.preventDefault();
+                                event.preventDefault();
 
-    var groupName = "' . esc_js($group_name) . '";
-    var userEmail = "' . esc_js($email) . '";
-    var description = ""; // Set description to empty string
-    var amount = parseFloat($("#payment-amount").val()).toFixed(2);
-    var paidBy = $("#payment-paid-by").val();
-    var paidTo = $("#payment-paid-to").val();
-    var currency = $("#payment-currency").val();
+                                var groupName = "' . esc_js($group_name) . '";
+                                var userEmail = "' . esc_js($email) . '";
+                                var description = ""; // Set description to empty string
+                                var amount = parseFloat($("#payment-amount").val()).toFixed(2);
+                                var paidBy = $("#payment-paid-by").val();
+                                var paidTo = $("#payment-paid-to").val();
+                                var currency = $("#payment-currency").val();
 
-    // Validate amount
-    if (isNaN(amount) || amount <= 0) {
-        alert("Amount must be greater than 0.");
-        return;
-    }
+                                // Validate amount
+                                if (isNaN(amount) || amount <= 0) {
+                                    alert("Amount must be greater than 0.");
+                                    return;
+                                }
 
-    // Ensure only up to 2 decimal places
-    if (amount.toString().split(".")[1] && amount.toString().split(".")[1].length > 2) {
-        alert("Amount must be a valid number with up to 2 decimal places.");
-        return;
-    }
+                                // Ensure only up to 2 decimal places
+                                if (amount.toString().split(".")[1] && amount.toString().split(".")[1].length > 2) {
+                                    alert("Amount must be a valid number with up to 2 decimal places.");
+                                    return;
+                                }
 
-    // Check that payer and payee are different
-    if (paidBy === paidTo) {
-        alert("The payer and payee must be different.");
-        return;
-    }
+                                // Check that payer and payee are different
+                                if (paidBy === paidTo) {
+                                    alert("The payer and payee must be different.");
+                                    return;
+                                }
 
-    // Show spinner
-    $(".modal-footer .spinner-border").removeClass("d-none");
+                                // Show spinner
+                                $(".modal-footer .spinner-border").removeClass("d-none");
 
-    // AJAX call to record the payment
-    $.ajax({
-        url: "' . esc_url(admin_url('admin-ajax.php')) . '",
-        type: "POST",
-        data: {
-            action: "gem_add_payment",
-            group_name: groupName,
-            email: userEmail,
-            description: description, // Pass empty string
-            amount: amount,
-            paid_by: paidBy,
-            paid_to: paidTo,
-            currency: currency
-        },
-        success: function(response) {
-            // Hide spinner
-            $(".modal-footer .spinner-border").addClass("d-none");
+                                // AJAX call to record the payment
+                                $.ajax({
+                                    url: "' . esc_url(admin_url('admin-ajax.php')) . '",
+                                    type: "POST",
+                                    data: {
+                                        action: "gem_add_payment",
+                                        group_name: groupName,
+                                        email: userEmail,
+                                        description: description, // Pass empty string
+                                        amount: amount,
+                                        paid_by: paidBy,
+                                        paid_to: paidTo,
+                                        currency: currency
+                                    },
+                                    success: function(response) {
+                                        // Hide spinner
+                                        $(".modal-footer .spinner-border").addClass("d-none");
 
-            if (response.success) {
-                // Close the modal first
-                $("#settle-modal").modal("hide");
+                                        if (response.success) {
+                                            // Close the modal first
+                                            $("#settle-modal").modal("hide");
 
-                // After modal is closed, show the success message
-                alert("Payment recorded successfully!");
-                location.reload();
-            } else {
-                alert("Failed to record payment: " + response.data);
-            }
-        },
-        error: function(error) {
-            // Hide spinner in case of error
-            $(".modal-footer .spinner-border").addClass("d-none");
-            alert("An error occurred: " + error.statusText);
-        }
-    });
-});
+                                            // After modal is closed, show the success message
+                                            alert("Payment recorded successfully!");
+                                            location.reload();
+                                        } else {
+                                            alert("Failed to record payment: " + response.data);
+                                        }
+                                    },
+                                    error: function(error) {
+                                        // Hide spinner in case of error
+                                        $(".modal-footer .spinner-border").addClass("d-none");
+                                        alert("An error occurred: " + error.statusText);
+                                    }
+                                });
+                            });
 
 
 
@@ -529,36 +535,63 @@ $output .= '</select>
                                 }
                             });
 
-                            $("#add-currency-form").submit(function(e) {
-                                e.preventDefault();
-                                var currencyName = $("#currency-name").val();
-                                var conversionRate = $("#conversion-rate").val();
+                            $("#add-currency-form").on("submit", function(event) {
+                                event.preventDefault();
+                                
+                                var currencyName = $("#currency-name").val().trim();
+                                var conversionRate = parseFloat($("#conversion-rate").val()).toFixed(4);
 
+                                // Validate that the conversion rate is greater than 0
+                                if (isNaN(conversionRate) || conversionRate <= 0) {
+                                    alert("Conversion rate must be greater than 0 and valid up to 4 decimal places.");
+                                    return;
+                                }
+
+                                // Show spinner
                                 $(".modal-footer .spinner-border").removeClass("d-none");
 
+                                // AJAX call to add the currency
                                 $.ajax({
-                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    url: "' . esc_url(admin_url('admin-ajax.php')) . '",
                                     type: "POST",
                                     data: {
                                         action: "gem_add_currency",
-                                        group_name: "' . $group_name . '",
-                                        email: "' . $email . '",
+                                        group_name: "' . esc_js($group_name) . '",
+                                        email: "' . esc_js($email) . '",
                                         currency: currencyName,
                                         conversion_rate: conversionRate
                                     },
                                     success: function(response) {
+                                        // Hide spinner
                                         $(".modal-footer .spinner-border").addClass("d-none");
-                                        $("#add-currency-modal").modal("hide");
-                                        $("#response-message").html(response.data);
-                                        setTimeout(function() {
+
+                                        if (response.success) {
+                                            // Close the modal first
+                                            $("#add-currency-modal").modal("hide");
+
+                                            // After modal is closed, show the success message
+                                            alert("Currency added successfully!");
                                             location.reload();
-                                        }, 2000);
+                                        } else {
+                                            alert("Failed to add currency: " + response.data);
+                                        }
                                     },
                                     error: function(error) {
+                                        // Hide spinner in case of error
                                         $(".modal-footer .spinner-border").addClass("d-none");
-                                        $("#response-message").html("An error occurred: " + error);
+                                        alert("An error occurred: " + error.statusText);
                                     }
                                 });
+                            });
+
+                            // Display the new currency in the input prompt dynamically
+                            $("#currency-name").on("input", function() {
+                                var currency = $(this).val().toUpperCase().trim();
+                                if (currency !== "") {
+                                    $("#currency-display").text(currency);
+                                } else {
+                                    $("#currency-display").text("[Currency]");
+                                }
                             });
 
                             $("#add-user-form").submit(function(e) {
