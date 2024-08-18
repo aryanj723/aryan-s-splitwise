@@ -24,16 +24,35 @@ function gem_my_groups_shortcode() {
         $groups = json_decode(wp_remote_retrieve_body($response), true);
         $output = '<div class="container">';
         $output .= '<div class="row">';
-        foreach ($groups as $group) {
+        foreach ($groups as $group_raw) {
+            // Parse the group name and creation date
+            list($group_name, $creation_timestamp) = explode('$', $group_raw);
+            $creation_date_parts = explode('T', $creation_timestamp);
+            $creation_date_str = $creation_date_parts[0];
+            $creation_time_str = explode('.', $creation_date_parts[1])[0]; // Removing microseconds
+            
+            // Format the date and time for user-friendly display
+            try {
+                $datetime = new DateTime($creation_date_str . ' ' . $creation_time_str);
+                $formatted_date = $datetime->format('M j, Y \a\t g:i:s A \U\T\C');
+            } catch (Exception $e) {
+                $formatted_date = $group_raw; // Fallback to original data if parsing fails
+            }
+
+            // Display the group name and creation date
             $output .= '<div class="col-md-4 mb-3">';
             $output .= '<div class="card">';
-            $output .= '<div class="card-body">';
+            $output .= '<div class="card-body text-center">';
             $output .= '<h5 class="card-title">';
             $output .= '<button class="btn btn-primary group-name-btn" onclick="window.location.href=\'';
-            $output .= site_url('/group-details?group_name=' . urlencode($group));
-            $output .= '\'">' . htmlspecialchars($group) . '</button>';
+            $output .= site_url('/group-details?group_name=' . urlencode($group_raw));
+            $output .= '\'">' . htmlspecialchars($group_name) . '</button>';
             $output .= '</h5>';
-            $output .= '<button class="btn btn-danger delete-btn" onclick="deleteGroup(this, \'' . urlencode($group) . '\')" title="Delete Group"><i class="bi bi-trash"></i></button>';
+            $output .= '<p class="card-text">Created: ' . htmlspecialchars($formatted_date) . '</p>';
+            // Updated the delete button to use a Bootstrap trash icon
+            $output .= '<button class="btn btn-danger delete-btn" onclick="deleteGroup(this, \'' . urlencode($group_raw) . '\')" title="Delete Group">';
+            $output .= '<i class="bi bi-trash"></i>'; // Using Bootstrap trash icon
+            $output .= '</button>';
             $output .= '</div>';
             $output .= '</div>';
             $output .= '</div>';
