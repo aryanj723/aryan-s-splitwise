@@ -541,6 +541,12 @@ $output .= '</select>
                                 var currencyName = $("#currency-name").val().trim();
                                 var conversionRate = parseFloat($("#conversion-rate").val()).toFixed(4);
 
+                                // Validate that the currency name does not exceed 20 characters
+                                if (currencyName.length > 20) {
+                                    alert("Currency name must not exceed 20 characters.");
+                                    return;
+                                }
+
                                 // Validate that the conversion rate is greater than 0
                                 if (isNaN(conversionRate) || conversionRate <= 0) {
                                     alert("Conversion rate must be greater than 0 and valid up to 4 decimal places.");
