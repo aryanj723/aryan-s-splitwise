@@ -22,100 +22,103 @@ function gem_my_groups_shortcode() {
         return "Something went wrong: $error_message";
     } else {
         $groups = json_decode(wp_remote_retrieve_body($response), true);
-        $output = '<div class="container">';
-        $output .= '<div class="row">';
+        $output = '<div class="container group-list">';
         
-        foreach ($groups as $group_raw) {
-            // Ensure that $group_raw contains a '$' for splitting
-            if (strpos($group_raw, '$') !== false) {
-                list($group_name, $creation_timestamp) = explode('$', $group_raw);
+        // Check if there are no groups found
+        if (empty($groups)) {
+            $output .= '<p>No groups found for you... go ahead and create one with the button above. Don\'t worry, everything is free (and will be) on this app 😊.</p>';
+        } else {
+            foreach ($groups as $group_raw) {
+                // Ensure that $group_raw contains a '$' for splitting
+                if (strpos($group_raw, '$') !== false) {
+                    list($group_name, $creation_timestamp) = explode('$', $group_raw);
 
-                // Validate if $creation_timestamp exists and is in expected format
-                if (isset($creation_timestamp) && strpos($creation_timestamp, 'T') !== false) {
-                    $creation_date_parts = explode('T', $creation_timestamp);
-                    $creation_date_str = $creation_date_parts[0];
-                    $creation_time_str = explode('.', $creation_date_parts[1])[0]; // Removing microseconds
+                    // Validate if $creation_timestamp exists and is in expected format
+                    if (isset($creation_timestamp) && strpos($creation_timestamp, 'T') !== false) {
+                        $creation_date_parts = explode('T', $creation_timestamp);
+                        $creation_date_str = $creation_date_parts[0];
+                        $creation_time_str = explode('.', $creation_date_parts[1])[0]; // Removing microseconds
 
-                    // Format the date and time for user-friendly display
-                    try {
-                        $datetime = new DateTime($creation_date_str . ' ' . $creation_time_str);
-                        $formatted_date = $datetime->format('M j, Y \a\t g:i:s A \U\T\C');
-                    } catch (Exception $e) {
-                        $formatted_date = $group_raw; // Fallback to original data if parsing fails
+                        // Format the date and time for user-friendly display
+                        try {
+                            $datetime = new DateTime($creation_date_str . ' ' . $creation_time_str);
+                            $formatted_date = $datetime->format('M j, Y \a\t g:i:s A \U\T\C');
+                        } catch (Exception $e) {
+                            $formatted_date = $group_raw; // Fallback to original data if parsing fails
+                        }
+                    } else {
+                        $formatted_date = 'Unknown creation date';
                     }
                 } else {
+                    $group_name = $group_raw;
                     $formatted_date = 'Unknown creation date';
                 }
-            } else {
-                $group_name = $group_raw;
-                $formatted_date = 'Unknown creation date';
-            }
 
-            // Display the group name and creation date
-            $output .= '<div class="col-md-4 mb-3">';
-            $output .= '<div class="card">';
-            $output .= '<div class="card-body text-center">';
-            $output .= '<h5 class="card-title">';
-            $output .= '<button class="btn btn-primary group-name-btn" onclick="window.location.href=\'';
-            $output .= site_url('/group-details?group_name=' . urlencode($group_raw)); // Keep the full group_raw value
-            $output .= '\'">' . htmlspecialchars($group_name) . '</button>';
-            $output .= '</h5>';
-            $output .= '<p class="card-text" style="font-size: 0.75em;">Created: ' . htmlspecialchars($formatted_date) . '</p>';
-            $output .= '<p class="balance-info" id="balance-info-' . htmlspecialchars($group_name) . '">Loading balance...</p>'; // Placeholder for balance info
-            $output .= '<button class="btn btn-danger delete-btn" style="display:none;" id="exit-btn-' . htmlspecialchars($group_name) . '" onclick="deleteGroup(this, \'' . urlencode($group_raw) . '\')" title="Exit Group">';
-            $output .= '<i class="bi bi-trash"></i>'; // Using Bootstrap trash icon
-            $output .= '</button>';
-            $output .= '</div>';
-            $output .= '</div>';
-            $output .= '</div>';
+                // Display the group name, creation date, and balance
+                $output .= '<div class="card group-button">';
+                $output .= '<div class="card-body text-center">';
+                $output .= '<h5 class="card-title">';
+                $output .= '<button class="btn btn-primary group-name-btn" onclick="window.location.href=\'';
+                $output .= site_url('/group-details?group_name=' . urlencode($group_raw));
+                $output .= '\'">' . htmlspecialchars($group_name) . '</button>';
+                $output .= '</h5>';
+                $output .= '<p class="card-text" style="font-size: 0.75em;">Created: ' . htmlspecialchars($formatted_date) . '</p>';
+                $output .= '<p class="balance-info" id="balance-info-' . htmlspecialchars($group_name) . '">Loading balance...</p>'; // Placeholder for balance info
+                $output .= '<button class="btn btn-danger delete-btn" style="display:none;" id="exit-btn-' . htmlspecialchars($group_name) . '" onclick="deleteGroup(this, \'' . urlencode($group_raw) . '\')" title="Exit Group">';
+                $output .= '<i class="bi bi-trash"></i>'; // Using Bootstrap trash icon
+                $output .= '</button>';
+                $output .= '</div>';
+                $output .= '</div>';
 
-            // Add script to fetch group details asynchronously for each group
-            $output .= '<script>
-                        jQuery(document).ready(function($) {
-                            $.ajax({
-                                url: "' . admin_url('admin-ajax.php') . '",
-                                method: "POST",
-                                data: {
-                                    action: "gem_get_group_details",
-                                    group_name: "' . $group_raw . '", // Use group_raw to keep full identifier
-                                    email: "' . $email . '"
-                                },
-                                success: function(response) {
-                                    if (response.success) {
-                                        var balances = response.data.balances;
-                                        var localCurrency = response.data.local_currency;
-                                        var netBalance = 0;
+                // Add script to fetch group details asynchronously for each group
+                $output .= '<script>
+                            jQuery(document).ready(function($) {
+                                $.ajax({
+                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    method: "POST",
+                                    data: {
+                                        action: "gem_get_group_details",
+                                        group_name: "' . $group_raw . '", // Use group_raw to keep full identifier
+                                        email: "' . $email . '"
+                                    },
+                                    success: function(response) {
+                                        if (response.success) {
+                                            var balances = response.data.balances;
+                                            var localCurrency = response.data.local_currency;
+                                            var netBalance = 0;
 
-                                        balances.forEach(function(balance) {
-                                            if (balance[0] === "' . $email . '") {
-                                                netBalance -= balance[2]; // The user owes this amount
-                                            } else if (balance[1] === "' . $email . '") {
-                                                netBalance += balance[2]; // The user is owed this amount
+                                            balances.forEach(function(balance) {
+                                                if (balance[0] === "' . $email . '") {
+                                                    netBalance -= balance[2]; // The user owes this amount
+                                                } else if (balance[1] === "' . $email . '") {
+                                                    netBalance += balance[2]; // The user is owed this amount
+                                                }
+                                            });
+
+                                            var balanceText = "";
+                                            if (netBalance > 0) {
+                                                balanceText = "You are owed " + localCurrency + " " + netBalance.toFixed(2);
+                                            } else if (netBalance < 0) {
+                                                balanceText = "You owe " + localCurrency + " " + Math.abs(netBalance).toFixed(2);
+                                            } else {
+                                                balanceText = "Settled";
+                                                $("#exit-btn-' . htmlspecialchars($group_name) . '").show(); // Show exit button when settled
                                             }
-                                        });
 
-                                        var balanceText = "";
-                                        if (netBalance > 0) {
-                                            balanceText = "You are owed " + localCurrency + " " + netBalance.toFixed(2);
-                                        } else if (netBalance < 0) {
-                                            balanceText = "You owe " + localCurrency + " " + Math.abs(netBalance).toFixed(2);
+                                            $("#balance-info-' . htmlspecialchars($group_name) . '").html(balanceText);
                                         } else {
-                                            balanceText = "Settled";
-                                            $("#exit-btn-' . htmlspecialchars($group_name) . '").show(); // Show exit button when settled
+                                            $("#balance-info-' . htmlspecialchars($group_name) . '").html("Error fetching balance");
                                         }
-
-                                        $("#balance-info-' . htmlspecialchars($group_name) . '").html(balanceText);
-                                    } else {
+                                    },
+                                    error: function() {
                                         $("#balance-info-' . htmlspecialchars($group_name) . '").html("Error fetching balance");
                                     }
-                                },
-                                error: function() {
-                                    $("#balance-info-' . htmlspecialchars($group_name) . '").html("Error fetching balance");
-                                }
+                                });
                             });
-                        });
-                        </script>';
+                            </script>';
+            }
         }
+        
         $output .= '</div>';
         $output .= '</div>';
 
@@ -172,6 +175,4 @@ function gem_get_group_details() {
 
     wp_die(); // Required to terminate immediately and return a proper response
 }
-
-
 ?>
