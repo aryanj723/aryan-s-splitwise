@@ -49,7 +49,7 @@ function gem_group_details_shortcode() {
         $group_name = sanitize_text_field($_GET['group_name']);
 
         $output .= '<table class="table">';
-        $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances</th></tr></thead>';
+        $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances (simplified)</th></tr></thead>';
         $output .= '<tbody><tr>';
 
         // Currency Information
