@@ -54,7 +54,6 @@ function gem_my_groups_shortcode() {
                     $formatted_date = 'Unknown creation date';
                 }
 
-                // Display the group name, creation date, and balance
                 $output .= '<div class="card group-button">';
                 $output .= '<div class="card-body text-center">';
                 $output .= '<h5 class="card-title">';
@@ -63,59 +62,65 @@ function gem_my_groups_shortcode() {
                 $output .= '\'">' . htmlspecialchars($group_name) . '</button>';
                 $output .= '</h5>';
                 $output .= '<p class="card-text" style="font-size: 0.75em;">Created: ' . htmlspecialchars($formatted_date) . '</p>';
-                $output .= '<p class="balance-info" id="balance-info-' . htmlspecialchars($group_name) . '">Loading balance...</p>'; // Placeholder for balance info
-                $output .= '<button class="btn btn-danger delete-btn" style="display:none;" id="exit-btn-' . htmlspecialchars($group_name) . '" onclick="deleteGroup(this, \'' . urlencode($group_raw) . '\')" title="Exit Group">';
-                $output .= '<i class="bi bi-trash"></i>'; // Using Bootstrap trash icon
+                $output .= '<div class="balance-info" id="balance-info-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $group_name) . '"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>'; // Spinner for loading balance
+                $output .= '<button class="btn btn-danger delete-btn" style="display:none;" id="exit-btn-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $group_name) . '" onclick="deleteGroup(this, \'' . urlencode($group_raw) . '\')" title="Exit Group">';
+                $output .= '<i class="bi bi-trash"></i>';
                 $output .= '</button>';
                 $output .= '</div>';
                 $output .= '</div>';
-
+                
                 // Add script to fetch group details asynchronously for each group
                 $output .= '<script>
-                            jQuery(document).ready(function($) {
-                                $.ajax({
-                                    url: "' . admin_url('admin-ajax.php') . '",
-                                    method: "POST",
-                                    data: {
-                                        action: "gem_get_group_details",
-                                        group_name: "' . $group_raw . '", // Use group_raw to keep full identifier
-                                        email: "' . $email . '"
-                                    },
-                                    success: function(response) {
-                                        if (response.success) {
-                                            var balances = response.data.balances;
-                                            var localCurrency = response.data.local_currency;
-                                            var netBalance = 0;
-
-                                            balances.forEach(function(balance) {
-                                                if (balance[0] === "' . $email . '") {
-                                                    netBalance -= balance[2]; // The user owes this amount
-                                                } else if (balance[1] === "' . $email . '") {
-                                                    netBalance += balance[2]; // The user is owed this amount
-                                                }
-                                            });
-
-                                            var balanceText = "";
-                                            if (netBalance > 0) {
-                                                balanceText = "You are owed " + localCurrency + " " + netBalance.toFixed(2);
-                                            } else if (netBalance < 0) {
-                                                balanceText = "You owe " + localCurrency + " " + Math.abs(netBalance).toFixed(2);
-                                            } else {
-                                                balanceText = "Settled";
-                                                $("#exit-btn-' . htmlspecialchars($group_name) . '").show(); // Show exit button when settled
-                                            }
-
-                                            $("#balance-info-' . htmlspecialchars($group_name) . '").html(balanceText);
-                                        } else {
-                                            $("#balance-info-' . htmlspecialchars($group_name) . '").html("Error fetching balance");
-                                        }
-                                    },
-                                    error: function() {
-                                        $("#balance-info-' . htmlspecialchars($group_name) . '").html("Error fetching balance");
+                jQuery(document).ready(function($) {
+                    var sanitizedGroupName = "' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $group_name) . '"; // Sanitize only for HTML ID
+                
+                    $.ajax({
+                        url: "' . admin_url('admin-ajax.php') . '",
+                        method: "POST",
+                        data: {
+                            action: "gem_get_group_details",
+                            group_name: "' . $group_raw . '", // Use the raw group name (including $ and spaces) for the API call
+                            email: "' . $email . '"
+                        },
+                        success: function(response) {
+                            console.log("AJAX request successful for group: ' . $group_raw . '");
+                            console.log("Response data:", response);
+                
+                            if (response.success) {
+                                var balances = response.data.balances;
+                                var localCurrency = response.data.local_currency;
+                                var netBalance = 0;
+                
+                                balances.forEach(function(balance) {
+                                    if (balance[0] === "' . $email . '") {
+                                        netBalance -= balance[2]; // The user owes this amount
+                                    } else if (balance[1] === "' . $email . '") {
+                                        netBalance += balance[2]; // The user is owed this amount
                                     }
                                 });
-                            });
-                            </script>';
+                
+                                var balanceText = "";
+                                if (netBalance > 0) {
+                                    balanceText = "You are owed " + localCurrency + " " + netBalance.toFixed(2);
+                                } else if (netBalance < 0) {
+                                    balanceText = "You owe " + localCurrency + " " + Math.abs(netBalance).toFixed(2);
+                                } else {
+                                    balanceText = "Settled";
+                                    $("#exit-btn-" + sanitizedGroupName).show(); // Show exit button when settled
+                                }
+                
+                                $("#balance-info-" + sanitizedGroupName).html(balanceText);
+                            } else {
+                                $("#balance-info-" + sanitizedGroupName).html("Error fetching balance");
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            $("#balance-info-" + sanitizedGroupName).html("Error fetching balance");
+                        }
+                    });
+                });
+                </script>';
+                
             }
         }
         
@@ -152,8 +157,7 @@ function gem_my_groups_shortcode() {
 // Add an AJAX handler for fetching group details
 add_action('wp_ajax_gem_get_group_details', 'gem_get_group_details');
 function gem_get_group_details() {
-    // Use the raw group name (including $ and timestamp) as passed in the original request
-    $group_name_raw = sanitize_text_field($_POST['group_name']);
+    $group_name_raw = urldecode(sanitize_text_field($_POST['group_name']));
     $email = sanitize_email($_POST['email']);
 
     // Call the API with the raw group name to get the group details
@@ -169,10 +173,14 @@ function gem_get_group_details() {
     if (is_wp_error($response)) {
         wp_send_json_error(array('message' => 'Error fetching group details'));
     } else {
+        // Log the API response
+        error_log("API Response: " . wp_remote_retrieve_body($response));
+        
         $group_details = json_decode(wp_remote_retrieve_body($response), true);
         wp_send_json_success($group_details);
     }
 
     wp_die(); // Required to terminate immediately and return a proper response
 }
+
 ?>
