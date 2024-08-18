@@ -10,13 +10,13 @@ function gem_group_details_shortcode() {
         return 'No group specified.';
     }
 
-    $group_name = sanitize_text_field($_GET['group_name']);
+    $group_name_raw = sanitize_text_field($_GET['group_name']);
     $user = wp_get_current_user();
     $email = $user->user_email;
 
     $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_group_details', array(
         'method'    => 'POST',
-        'body'      => json_encode(array('name' => $group_name, 'email' => $email)),
+        'body'      => json_encode(array('name' => $group_name_raw, 'email' => $email)),
         'headers'   => array(
             'Content-Type' => 'application/json',
         ),
@@ -29,7 +29,13 @@ function gem_group_details_shortcode() {
     } else {
         $group_details = json_decode(wp_remote_retrieve_body($response), true);
 
-        $output = '<h2>' . htmlspecialchars($group_details['name']) . '</h2>';
+        // Parse the group name and creation date
+        list($group_name, $creation_timestamp) = explode('$', $group_name_raw);
+        $creation_date = explode('T', $creation_timestamp)[0]; // Get the date and ignore the time
+
+        // Display the formatted group name and creation date
+        $output = '<h2>Group: ' . htmlspecialchars($group_name) . ' ; Created: ' . htmlspecialchars($creation_date) . '</h2>';
+
 
         $output .= '<table class="table">';
         $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances</th></tr></thead>';
