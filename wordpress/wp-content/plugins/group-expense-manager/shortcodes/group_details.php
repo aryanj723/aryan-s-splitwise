@@ -296,37 +296,60 @@ $output .= '</select>
 
         // Remove Expense Modal
         $output .= '<div class="modal fade" id="remove-expense-modal" tabindex="-1" role="dialog">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Remove Expense</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <form id="remove-expense-form">
-                                        <label for="expense-select">Select Expense:</label>
-                                        <select id="expense-select" class="form-control" required>';
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Remove Expense</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="remove-expense-form">
+                        <label for="expense-select">Select Expense:</label>
+                        <select id="expense-select" class="form-control" required>';
 
-        foreach ($group_details['entries'] as $entry) {
-            if ($entry['type'] === 'expense' && !$entry['cancelled']) {
-                $output .= '<option value="' . htmlspecialchars($entry['date']) . '">' . htmlspecialchars($entry['description'] . ' - ' . number_format($entry['amount'], 2) . ' ' . $entry['currency']) . '</option>';
+            foreach (array_reverse($group_details['entries']) as $entry) {
+                if ($entry['type'] === 'expense' && !$entry['cancelled']) {
+                    
+                    // Extract the date part before the microseconds (i.e., before the last colon)
+                    $raw_date = $entry['date'];
+                    $date_parts = explode(':', $raw_date); // Split by colon
+                    if (count($date_parts) >= 3) {
+                        // Join the first 3 parts to form a valid datetime string
+                        $datetime_str = $date_parts[0] . ':' . $date_parts[1] . ':' . $date_parts[2];
+                        try {
+                            $date = new DateTime($datetime_str);
+                            $formatted_date = ' - ' . $date->format('M j, Y \a\t g:i:s A');
+                        } catch (Exception $e) {
+                            $formatted_date = ''; // If date is invalid, do not display any date
+                        }
+                    } else {
+                        $formatted_date = ''; // If the date format is invalid
+                    }
+
+                    // Display description, amount, currency, and the formatted date (if valid)
+                    $output .= '<option value="' . htmlspecialchars($entry['date']) . '">'
+                            . htmlspecialchars($entry['description']) . ' - ' 
+                            . number_format($entry['amount'], 2) . ' ' 
+                            . htmlspecialchars($entry['currency']) 
+                            . $formatted_date // Add date if valid, else it remains blank
+                            . '</option>';
+                }
             }
-        }
 
-        $output .= '           </select>
-                                        <button type="submit" class="btn btn-danger mt-3">Remove</button>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <div class="spinner-border text-primary d-none" role="status">
-                                        <span class="sr-only">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>';
+            $output .= '</select>
+                        <button type="submit" class="btn btn-danger mt-3">Remove</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <div class="spinner-border text-primary d-none" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>';
 
         $output .= '<div id="response-message"></div>';
 

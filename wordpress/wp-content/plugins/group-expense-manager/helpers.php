@@ -27,6 +27,7 @@ function gem_display_expenses($entries) {
     $logged_in_user_email = wp_get_current_user()->user_email;
     $output = '<table class="table">';
     $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Paid By</th><th>Shares</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
+    
     foreach ($entries as $entry) {
         if ($entry['type'] !== 'settlement') {
             $display = gem_get_entry_display($entry);
@@ -37,6 +38,7 @@ function gem_display_expenses($entries) {
             $output .= '<td>' . $entry['currency'] . '</td>';
             $output .= '<td>' . $display['paid_by'] . '</td>';
             $output .= '<td>';
+
             if (isset($entry['shares'])) {
                 $output .= implode(', ', array_map(
                     function($k, $v) use ($logged_in_user_email) {
@@ -50,7 +52,25 @@ function gem_display_expenses($entries) {
                 $output .= 'N/A';
             }
             $output .= '</td>';
-            $output .= '<td>' . $entry['date'] . '</td>'; 
+
+            // Parsing and formatting the date
+            $raw_date = $entry['date'];
+            $formatted_date = htmlspecialchars($raw_date); // Default to the raw date
+
+            // Attempt to format the date
+            $date_parts = explode(':', $raw_date);
+            if (count($date_parts) >= 4) {
+                $datetime_str = $date_parts[0] . ':' . $date_parts[1] . ':' . $date_parts[2];
+                $milliseconds = $date_parts[3];
+                try {
+                    $date = new DateTime($datetime_str);
+                    $formatted_date = $date->format('M j, Y \a\t g:i:s') . ':' . $milliseconds . ' ' . $date->format('A') . ' UTC';
+                } catch (Exception $e) {
+                    // Use raw date if formatting fails
+                }
+            }
+
+            $output .= '<td>' . $formatted_date . '</td>';
             $output .= '<td>' . $display['added_by'] . '</td>';
             $output .= '</tr>';
         }
@@ -67,6 +87,7 @@ function gem_display_payments($entries) {
     $logged_in_user_email = wp_get_current_user()->user_email;
     $output = '<table class="table">';
     $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
+    
     foreach ($entries as $entry) {
         if ($entry['type'] === 'settlement') {
             $display = gem_get_entry_display($entry);
@@ -75,7 +96,25 @@ function gem_display_payments($entries) {
             $output .= '<td>' . $display['paid_by'] . ' paid ' . $display['paid_to'] . '</td>';
             $output .= '<td>' . $entry['amount'] . '</td>';
             $output .= '<td>' . $entry['currency'] . '</td>';
-            $output .= '<td>' . $entry['date'] . '</td>'; 
+
+            // Parsing and formatting the date
+            $raw_date = $entry['date'];
+            $formatted_date = htmlspecialchars($raw_date); // Default to the raw date
+
+            // Attempt to format the date
+            $date_parts = explode(':', $raw_date);
+            if (count($date_parts) >= 4) {
+                $datetime_str = $date_parts[0] . ':' . $date_parts[1] . ':' . $date_parts[2];
+                $milliseconds = $date_parts[3];
+                try {
+                    $date = new DateTime($datetime_str);
+                    $formatted_date = $date->format('M j, Y \a\t g:i:s') . ':' . $milliseconds . ' ' . $date->format('A') . ' UTC';
+                } catch (Exception $e) {
+                    // Use raw date if formatting fails
+                }
+            }
+
+            $output .= '<td>' . $formatted_date . '</td>';
             $output .= '<td>' . $display['added_by'] . '</td>';
             $output .= '</tr>';
         }
@@ -83,5 +122,6 @@ function gem_display_payments($entries) {
     $output .= '</tbody></table>';
     return $output;
 }
+
 
 ?>
