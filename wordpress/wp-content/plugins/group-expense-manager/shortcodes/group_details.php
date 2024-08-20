@@ -14,20 +14,28 @@ function gem_group_details_shortcode() {
     $user = wp_get_current_user();
     $email = $user->user_email;
 
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_group_details', array(
-        'method'    => 'POST',
-        'body'      => json_encode(array('name' => $group_name_raw, 'email' => $email)),
-        'headers'   => array(
-            'Content-Type' => 'application/json',
-        ),
-    ));
+    $group_details = get_transient($group_name_raw);
 
-    if (is_wp_error($response)) {
-        $error_message = $response->get_error_message();
-        error_log("Error fetching group details: $error_message");
-        return "Something went wrong: $error_message";
-    } else {
-        $group_details = json_decode(wp_remote_retrieve_body($response), true);
+    if ($group_details === false) {
+        // If not found in the transient, proceed with the API call
+        $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_group_details', array(
+            'method'    => 'POST',
+            'body'      => json_encode(array('name' => $group_name_raw, 'email' => $email)),
+            'headers'   => array(
+                'Content-Type' => 'application/json',
+            ),
+        ));
+
+        if (is_wp_error($response)) {
+            $error_message = $response->get_error_message();
+            error_log("Error fetching group details: $error_message");
+            return "Something went wrong: $error_message";
+        } else {
+            $group_details = json_decode(wp_remote_retrieve_body($response), true);
+            // Store the API response in the cache for one day
+            set_transient($group_name_raw, $group_details, DAY_IN_SECONDS);
+        }
+    }
 
         // Parse the group name and creation date
         $group_name_parts = explode('$', $group_name_raw);
@@ -739,6 +747,5 @@ $output .= '</select>
 
         return $output;
     }
-}
 
 ?>

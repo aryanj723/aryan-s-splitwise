@@ -157,7 +157,12 @@ function gem_get_group_details() {
     $group_name_raw = urldecode(sanitize_text_field($_POST['group_name']));
     $email = sanitize_email($_POST['email']);
 
-    // Call the API with the raw group name to get the group details
+    // First, check if group details are in the transient cache
+$group_details = get_transient($group_name_raw);
+
+// If transient is empty, fetch from the API
+if ($group_details === false) {
+    // Make the API request to get group details
     $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_group_details', array(
         'method'    => 'POST',
         'body'      => json_encode(array('name' => $group_name_raw, 'email' => $email)), // Use the raw group name here
@@ -169,10 +174,19 @@ function gem_get_group_details() {
     // Handle API response
     if (is_wp_error($response)) {
         wp_send_json_error(array('message' => 'Error fetching group details'));
+        return; // Ensure the execution stops here in case of error
     } else {
+        // Decode the API response
         $group_details = json_decode(wp_remote_retrieve_body($response), true);
-        wp_send_json_success($group_details);
+
+        // Store the API response in the transient cache for 1 day (24 hours)
+        set_transient($group_name_raw, $group_details, DAY_IN_SECONDS);
     }
+}
+
+// Send the group details in the response (either from cache or API)
+wp_send_json_success($group_details);
+
 
     wp_die(); // Required to terminate immediately and return a proper response
 }
