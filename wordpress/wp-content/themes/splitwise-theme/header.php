@@ -5,6 +5,15 @@
     <title><?php bloginfo('name'); ?></title>
     <link rel="stylesheet" href="<?php bloginfo('stylesheet_url'); ?>">
     <?php wp_head(); ?>
+    <style>
+        /* Add custom styles for the "Signed in as" section */
+        .user-email {
+            font-size: 1.1em; /* Increase font size slightly */
+            color: #fff; /* Set font color to white */
+            margin-top: 10px; /* Some spacing below the buttons */
+            text-align: center; /* Center the text */
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -21,6 +30,12 @@
                 <?php endif; ?>
             </ul>
         </nav>
+        
+        <!-- Add "Signed in as <email>" below the buttons if the user is logged in -->
+        <?php if (is_user_logged_in()): ?>
+            <?php $user = wp_get_current_user(); ?>
+            <p class="user-email">Signed in as <?php echo esc_html($user->user_email); ?></p>
+        <?php endif; ?>
     </header>
 
     <div id="create-group-form" style="display: none;">
@@ -32,3 +47,7 @@
             document.getElementById('create-group-form').style.display = 'block';
         });
     </script>
+
+    <?php wp_footer(); ?>
+</body>
+</html>
