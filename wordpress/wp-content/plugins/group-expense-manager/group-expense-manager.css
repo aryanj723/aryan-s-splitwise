@@ -220,7 +220,7 @@ li {
 }
 
 .group-name-btn:hover {
-    background-color: #0056b3; /* Slightly darker shade on hover */
+    background-color: white; /* Slightly darker shade on hover */
     color: white; /* Keep text white on hover */
 }
 
@@ -230,3 +230,45 @@ li {
     color: white;
 }
 
+/* New CSS for preventing overflow and managing modal behavior */
+
+/* Fix for modal to avoid any overflow issues */
+#create-group-modal .modal-dialog {
+    max-width: 600px;
+    margin: 1.75rem auto;
+}
+
+/* Ensure no button overflow */
+.create-group-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#add-member-btn,
+#create-group-btn {
+    position: relative; /* Prevent duplication issues */
+    margin-bottom: 0;
+    z-index: 1; /* Ensure main buttons stay on top */
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Properly position suggestion boxes to avoid overflow issues */
+.suggestion-box {
+    z-index: 1050; /* Ensure suggestion box stays above modal content */
+    max-height: 200px; /* Prevent suggestion box overflow */
+    overflow-y: auto; /* Allow scrolling in suggestion box */
+}
+
+/* Modal positioning fix */
+.modal.show {
+    display: block !important;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

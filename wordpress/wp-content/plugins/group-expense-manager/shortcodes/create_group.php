@@ -6,8 +6,10 @@ function gem_create_group_shortcode() {
         return 'You must be logged in to create a group.';
     }
 
+    // Properly wrap the button in a container
+
     $output = '<div class="modal fade" id="create-group-modal" tabindex="-1" role="dialog">
-                   <div class="modal-dialog" role="document">
+                   <div class="modal-dialog modal-dialog-centered" role="document">
                        <div class="modal-content">
                            <div class="modal-header">
                                <h5 class="modal-title">Create Group</h5>
@@ -16,35 +18,43 @@ function gem_create_group_shortcode() {
                                </button>
                            </div>
                            <div class="modal-body">
-                               <p><strong>You will be a part of the group by default.</strong></p> <!-- Displaying the message in bold -->
+                               <p><strong>You will be a part of the group by default.</strong></p>
                                <form id="create-group-form">
-                                   <div class="form-group">
-                                       <label for="group-name">Group Name:</label>
-                                       <input type="text" id="group-name" class="form-control" placeholder="Enter group name" required maxlength="20">
-                                       <div id="group-name-error" class="text-danger"></div>
-                                   </div>
-                                   <div class="form-group">
-                                       <label for="local-currency">Local Currency:</label>
-                                       <input type="text" id="local-currency" class="form-control" placeholder="Enter local currency" required maxlength="20">
-                                       <div id="local-currency-error" class="text-danger"></div>
-                                   </div>
-                                   <div id="members-container">
-                                       <div class="form-group">
-                                           <label for="group-member">Member:</label>
-                                           <input type="email" name="group-member" class="form-control group-member-input" placeholder="Enter email address" required>
-                                           <div class="group-member-error text-danger"></div>
+                                   <div class="form-row">
+                                       <div class="form-group col-md-12">
+                                           <label for="group-name">Group Name:</label>
+                                           <input type="text" id="group-name" class="form-control" placeholder="Enter group name" required maxlength="20">
+                                           <div id="group-name-error" class="text-danger"></div>
                                        </div>
                                    </div>
-                                   <button type="button" id="add-member-btn" class="btn btn-secondary">Add Member</button>
-                                   <button type="submit" class="btn btn-primary">Create Group</button>
+                                   <div class="form-row">
+                                       <div class="form-group col-md-12">
+                                           <label for="local-currency">Local Currency:</label>
+                                           <input type="text" id="local-currency" class="form-control" placeholder="Enter local currency" required maxlength="20">
+                                           <div id="local-currency-error" class="text-danger"></div>
+                                       </div>
+                                   </div>
+                                   <div id="members-container" class="form-row"></div>
+                                   <div class="form-row">
+                                       <div class="col-6">
+                                           <button type="button" id="add-member-btn" class="btn btn-secondary btn-block">Add Member</button>
+                                       </div>
+                                       <div class="col-6">
+                                           <button type="submit" class="btn btn-primary btn-block">Create Group</button>
+                                       </div>
+                                   </div>
+                                   <!-- Spinner for processing state -->
+                                   <div id="spinner" class="spinner-border text-primary d-none mt-3" role="status">
+                                       <span class="sr-only">Loading...</span>
+                                   </div>
                                </form>
-                               <div id="create-group-response"></div>
                            </div>
                        </div>
                    </div>
                </div>
                <script>
                    jQuery(document).ready(function($) {
+                       var currentUserEmail = "' . esc_js(wp_get_current_user()->user_email) . '";
 
                        // Function to validate group name (No $ sign and max 20 characters)
                        function validateGroupName(groupName) {
@@ -77,73 +87,72 @@ function gem_create_group_shortcode() {
                            var emails = {};
 
                            $("input[name=\'group-member\']").each(function() {
-                               var email = $(this).val().trim().toLowerCase(); // Convert to lowercase
-                               var emailInput = $(this);
+                               var email = $(this).val().trim().toLowerCase();
                                var emailError = $(this).next(".group-member-error");
 
-                               // Validate if email is empty
                                if (email === "") {
                                    emailError.text("Email cannot be empty.");
                                    valid = false;
-                                   return false; // Exit loop
+                                   return false;
                                }
 
-                               // Validate email format
                                var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
                                if (!emailPattern.test(email)) {
                                    emailError.text("Invalid email format.");
                                    valid = false;
-                                   return false; // Exit loop
+                                   return false;
                                }
 
-                               // Check for duplicate emails
                                if (emails[email]) {
                                    emailError.text("Duplicate email found.");
                                    valid = false;
-                                   return false; // Exit loop
+                                   return false;
                                } else {
-                                   emails[email] = true; // Mark email as seen
-                                   members.push(email); // Add email to the members list
-                                   emailError.text(""); // Clear error message
+                                   emails[email] = true;
+                                   members.push(email);
+                                   emailError.text("");
                                }
                            });
 
                            return valid ? members : null;
                        }
 
-                       // Function to clear form fields and remove extra member inputs
-                       function clearForm() {
-                           $("#group-name").val("");
-                           $("#local-currency").val("");
-                           $(".group-member-input").val(""); // Clear the first input
-                           $(".group-member-error").text(""); // Clear any email error messages
-                           $("#group-name-error").text(""); // Clear group name error
-                           $("#local-currency-error").text(""); // Clear currency error
-                           
-                           // Remove any additional member inputs (except the first one)
-                           $("#members-container .form-group").not(":first").remove();
-                       }
+                       // Function to clear form fields and suggestions
+                       function clearFormAndSuggestions() {
+    $("#group-name").val("");
+    $("#local-currency").val("");
+    $(".group-member-input").val("");  // Clear member inputs
+    $(".group-member-error").text(""); // Clear any error messages
+    $("#group-name-error").text("");   // Clear group name errors
+    $("#local-currency-error").text(""); // Clear currency errors
+    $(".suggestion-box").hide().empty(); // Clear any suggestion boxes
 
-                       // Reset form data when modal is hidden
+    // Clear all dynamically added member inputs
+    $("#members-container").empty();
+}
+
+                       // Reset form when modal is hidden
                        $("#create-group-modal").on("hidden.bs.modal", function () {
-                           clearForm(); // Clear form and remove extra member fields
-                       });
+    clearFormAndSuggestions();
+    $("#create-group-modal").removeClass("show").css("display", "none");
+});
 
+                       // Form submission
                        $("#create-group-form").submit(function(event) {
                            event.preventDefault();
                            var groupName = $("#group-name").val();
                            var localCurrency = $("#local-currency").val();
 
-                           // Validate group name and local currency
                            if (!validateGroupName(groupName) || !validateLocalCurrency(localCurrency)) {
                                return;
                            }
 
-                           // Validate members and check for duplication
                            var members = validateAndCollectMembers();
                            if (!members) {
-                               return; // If validation fails, stop the submission
+                               return;
                            }
+
+                           $("#spinner").removeClass("d-none");
 
                            $.ajax({
                                url: "' . admin_url('admin-ajax.php') . '",
@@ -155,26 +164,79 @@ function gem_create_group_shortcode() {
                                    members: members
                                },
                                success: function(response) {
+                                   $("#spinner").addClass("d-none");
+
                                    if (response.success) {
-                                       $("#create-group-response").html("Group creation successful!");
+                                       $("#create-group-modal").modal("hide");
+                                       alert("Group created successfully!");
+
                                        setTimeout(function() {
-                                           window.location.href = "' . site_url('/my-groups') . '"; // Redirect after success
-                                       }, 2000);
+                                           location.reload();
+                                       }, 500);
                                    } else {
-                                       $("#create-group-response").html("Error: " + response.data);
+                                       alert("Error: " + response.data);
                                    }
                                },
                                error: function(response) {
-                                   $("#create-group-response").html("Error: " + response.responseText);
+                                   $("#spinner").addClass("d-none");
+                                   alert("Error: " + response.responseText);
                                }
                            });
                        });
 
+                       // Add new member input field
                        $("#add-member-btn").click(function() {
-                           $("#members-container").append(\'<div class="form-group"><label for="group-member">Member:</label><input type="email" name="group-member" class="form-control group-member-input" placeholder="Enter email address" required><div class="group-member-error text-danger"></div></div>\');
+                           var memberHtml = \'<div class="form-group col-md-12"><label for="group-member">Member:</label>\' +
+                                            \'<input type="text" name="group-member" class="form-control group-member-input" placeholder="Search member by name or email">\'+
+                                            \'<div class="suggestion-box" style="display:none; background: #fff; border: 1px solid #ccc; z-index: 10; max-height: 150px; overflow-y: auto;"></div>\'+
+                                            \'<div class="group-member-error text-danger"></div></div>\';
+                           $("#members-container").append(memberHtml);
                        });
 
-                       // Show modal when button is clicked
+                       // Search for members
+                       $(document).on("input", ".group-member-input", function() {
+                           var search_term = $(this).val().trim().toLowerCase();
+                           var $input = $(this);
+
+                           if (search_term.length >= 3) {
+                               $.ajax({
+                                   url: "' . admin_url('admin-ajax.php') . '",
+                                   method: "POST",
+                                   data: {
+                                       action: "gem_search_members",
+                                       search_term: search_term
+                                   },
+                                   success: function(response) {
+                                       if (response.success && response.data.length > 0) {
+                                           var suggestions = "";
+                                           $.each(response.data, function(index, user) {
+                                               if (user.email.toLowerCase() !== currentUserEmail) {
+                                                   suggestions += \'<button type="button" class="btn btn-sm btn-info suggestion-item" data-email="\' + user.email + \'">\' + user.name + \' - \' + user.email + \'</button><br>\';
+                                               }
+                                           });
+                                           $input.siblings(".suggestion-box").html(suggestions).show();
+                                       } else {
+                                           $input.siblings(".suggestion-box").html("<p>No results found</p>").show();
+                                       }
+                                   },
+                                   error: function() {
+                                       $input.siblings(".suggestion-box").html("<p>Error searching members</p>").show();
+                                   }
+                               });
+                           } else {
+                               $input.siblings(".suggestion-box").hide();
+                           }
+                       });
+
+                       // Handle suggestion click
+                       $(document).on("click", ".suggestion-item", function() {
+                           var email = $(this).data("email");
+                           var $input = $(this).closest(".form-group").find(".group-member-input");
+                           $input.val(email);
+                           $input.siblings(".suggestion-box").hide();
+                       });
+
+                       // Show modal when "Create Group" is clicked
                        $("#create-group-btn").click(function() {
                            $("#create-group-modal").modal("show");
                        });

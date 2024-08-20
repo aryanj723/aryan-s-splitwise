@@ -400,4 +400,52 @@ function gem_remove_expense() {
     }
 }
 
+add_action('wp_ajax_gem_search_members', 'gem_search_members');
+add_action('wp_ajax_nopriv_gem_search_members', 'gem_search_members');
+
+function gem_search_members() {
+    // Get the search term from the request and sanitize it
+    $search_term = sanitize_text_field($_POST['search_term']);
+    
+    // Remove spaces from the search term
+    $search_term = str_replace(' ', '', $search_term);
+
+    // If search term is empty, return empty results
+    if (empty($search_term)) {
+        wp_send_json_success([]);
+        return;
+    }
+
+    // Search for users by display_name and user_email only if they contain the search term (either of them)
+    $args = array(
+        'search'         => '*' . esc_attr($search_term) . '*',
+        'search_columns' => array('user_email', 'display_name') // Search in display_name and email
+    );
+
+    $user_query = new WP_User_Query($args);
+    $users = $user_query->get_results();
+
+    // Prepare results
+    $results = array();
+    foreach ($users as $user) {
+        // Get the display name, or use user_login if display_name is empty
+        $display_name = !empty($user->display_name) ? $user->display_name : $user->user_login;
+
+        // Remove spaces from display_name and user_email for comparison
+        $normalized_display_name = str_replace(' ', '', $display_name);
+        $normalized_email = str_replace(' ', '', $user->user_email);
+
+        // Check if the search term matches either the normalized display_name or the email
+        if (stripos($normalized_display_name, $search_term) !== false || stripos($normalized_email, $search_term) !== false) {
+            $results[] = array(
+                'name'  => $display_name,
+                'email' => $user->user_email
+            );
+        }
+    }
+
+    // Send back the result as JSON
+    wp_send_json_success($results);
+}
+
 ?>

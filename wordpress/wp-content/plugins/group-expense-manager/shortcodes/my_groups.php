@@ -128,6 +128,8 @@ function gem_my_groups_shortcode() {
         $output .= '<script>';
         $output .= 'function deleteGroup(button, groupName) {';
         $output .= 'var $ = jQuery.noConflict();'; // Use jQuery in no-conflict mode
+        $output .= 'var confirmDelete = confirm("Are you sure you want to leave the group?");';
+        $output .= 'if (confirmDelete) {';
         $output .= '$.ajax({';
         $output .= 'url: "' . admin_url('admin-ajax.php') . '",';
         $output .= 'method: "POST",';
@@ -144,6 +146,7 @@ function gem_my_groups_shortcode() {
         $output .= 'alert("Error deleting group: " + error);';
         $output .= '}';
         $output .= '});';
+        $output .= '}';
         $output .= '}';
         $output .= '</script>';
         
