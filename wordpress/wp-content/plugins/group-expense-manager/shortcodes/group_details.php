@@ -57,7 +57,7 @@ function gem_group_details_shortcode() {
         $group_name = sanitize_text_field($_GET['group_name']);
 
         $output .= '<table class="table">';
-        $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances (simplified)</th></tr></thead>';
+        $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances in ' . htmlspecialchars($group_details['local_currency']) . ' (simplified)</th></tr></thead>';
         $output .= '<tbody><tr>';
 
         // Currency Information
@@ -82,7 +82,7 @@ function gem_group_details_shortcode() {
                     break;
                 }
             }
-            $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+            $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
             $output .= '<li>' . htmlspecialchars($display_name) . ': ' . htmlspecialchars(number_format($spend, 2)) . ' ' . htmlspecialchars($group_details['local_currency']) . '</li>';
         }
         $output .= '</ul>';
@@ -93,8 +93,8 @@ function gem_group_details_shortcode() {
         if (!empty($group_details['balances'])) {
             $output .= '<ul>';
             foreach ($group_details['balances'] as $balance) {
-                $debtor = ($balance[0] == $email) ? 'You' : get_user_display_name($balance[0]);
-                $creditor = ($balance[1] == $email) ? 'You' : get_user_display_name($balance[1]);
+                $debtor = ($balance[0] == $email) ? 'You' : get_user_display_name($balance[0], $group_details['members']);
+                $creditor = ($balance[1] == $email) ? 'You' : get_user_display_name($balance[1], $group_details['members']);
                 
                 // Check if the currency key exists before accessing
                 $currency = isset($balance[3]) ? htmlspecialchars($balance[3]) : '';
@@ -122,8 +122,8 @@ function gem_group_details_shortcode() {
         $output .= '</div>';
 
         $output .= '<div id="group-entries">';
-        $output .= '<h4>Expenses</h4>' . gem_display_expenses(array_reverse($group_details['entries']));
-        $output .= '<h4>Payments</h4>' . gem_display_payments(array_reverse($group_details['entries']));
+        $output .= '<h4>Expenses</h4>' . gem_display_expenses(array_reverse($group_details['entries']),$group_details['members']);
+        $output .= '<h4>Payments</h4>' . gem_display_payments(array_reverse($group_details['entries']),$group_details['members']);
         $output .= '</div>';
 
         // Logs Section
@@ -132,7 +132,26 @@ function gem_group_details_shortcode() {
         $output .= '<table class="table">';
         $output .= '<tbody>';
         foreach ($group_details['logs'] as $log) {
-            $output .= '<tr><td>' . htmlspecialchars($log) . '</td></tr>';
+            // Use a regular expression to find email addresses in the log
+            $log_with_names = preg_replace_callback(
+                '/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/',
+                function ($matches) use ($email) {
+                    $email_in_log = $matches[0];
+        
+                    // If the email matches the current user's email, return 'You'
+                    if ($email_in_log === $email) {
+                        return 'You';
+                    }
+        
+                    // Otherwise, return the display name if it exists, or the email as fallback
+                    $user = get_user_by('email', $email_in_log);
+                    return $user ? get_user_display_name($user, $group_details['members']) : $email_in_log;
+                },
+                $log
+            );
+        
+            // Output the modified log
+            $output .= '<tr><td>' . htmlspecialchars($log_with_names) . '</td></tr>';
         }
         $output .= '</tbody></table>';
         $output .= '</div>';
@@ -159,7 +178,7 @@ function gem_group_details_shortcode() {
                     <select id="entry-paid-by" class="form-control">';
 
 foreach ($group_details['members'] as $member) {
-    $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+    $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
     $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
 }
 
@@ -178,7 +197,7 @@ $output .= '</select>
                     <label for="entry-shares">Shares:</label>';
 
 foreach ($group_details['members'] as $member) {
-    $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+    $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
     $output .= '<div class="user-share" style="display: flex; align-items: center; margin-bottom: 10px;">
                     <input type="checkbox" class="user-checkbox" data-user-id="' . htmlspecialchars($member) . '" style="margin-right: 10px;">
                     <span class="user-name" style="width: 60%;">' . htmlspecialchars($display_name) . '</span>
@@ -216,7 +235,7 @@ $output .= '<div class="modal fade" id="settle-modal" tabindex="-1" role="dialog
                 <label for="payment-paid-by">Paid By:</label>
                 <select id="payment-paid-by" class="form-control">';
 foreach ($group_details['members'] as $member) {
-$display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+$display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
 $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
 }
 
@@ -225,7 +244,7 @@ $output .= '</select>
                 <label for="payment-paid-to">Paid To:</label>
                 <select id="payment-paid-to" class="form-control">';
 foreach ($group_details['members'] as $member) {
-$display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member) : $member);
+$display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
 $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
 }
 
