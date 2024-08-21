@@ -39,7 +39,8 @@ function gem_create_group() {
     $timestamp_formatted = gmdate("Y-m-d\TH:i:s.", floor($timestamp)) . sprintf('%02d', ($timestamp - floor($timestamp)) * 100);
     $group_name .= '$' . $timestamp_formatted;
 
-    if (empty($group_name) || empty($members) || empty($local_currency) || empty($creator_email)) {
+    // Validate required fields
+    if (empty($group_name) || empty($local_currency) || empty($creator_email)) {
         wp_send_json_error('Please provide all required fields.');
         return;
     }
@@ -73,6 +74,7 @@ function gem_create_group() {
         }
     }
 }
+
 
 // Handle AJAX requests for adding expenses
 add_action('wp_ajax_gem_add_expense', 'gem_add_expense');

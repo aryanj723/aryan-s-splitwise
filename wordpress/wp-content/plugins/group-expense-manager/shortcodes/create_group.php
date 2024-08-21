@@ -50,6 +50,14 @@ function gem_create_group_shortcode() {
                        </div>
                    </div>
                </div>
+
+               <!-- Fullscreen overlay for loading state -->
+               <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; display: none;">
+                   <div class="spinner-border text-light" role="status" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                       <span class="sr-only">Loading...</span>
+                   </div>
+               </div>
+
                <script>
                    jQuery(document).ready(function($) {
                        var currentUserEmail = "' . esc_js(wp_get_current_user()->user_email) . '";
@@ -70,6 +78,9 @@ function gem_create_group_shortcode() {
 
                        // Function to validate local currency (Max 20 characters)
                        function validateLocalCurrency(localCurrency) {
+                           localCurrency = localCurrency.toUpperCase(); // Capitalize currency input
+                           $("#local-currency").val(localCurrency);
+
                            if (localCurrency.length > 20) {
                                $("#local-currency-error").text("Local currency must be less than 20 characters.");
                                return false;
@@ -116,7 +127,7 @@ function gem_create_group_shortcode() {
                                }
                            });
 
-                           return valid ? members : null;
+                           return valid ? members : [];  // Return empty array if no members
                        }
 
                        // Function to clear form fields and suggestions
@@ -143,18 +154,19 @@ function gem_create_group_shortcode() {
                        $("#create-group-form").submit(function(event) {
                            event.preventDefault();
                            var groupName = $("#group-name").val();
-                           var localCurrency = $("#local-currency").val();
+                           var localCurrency = $("#local-currency").val().toUpperCase();  // Ensure uppercase before sending
 
                            if (!validateGroupName(groupName) || !validateLocalCurrency(localCurrency)) {
                                return;
                            }
 
-                           var members = validateAndCollectMembers();
-                           if (!members) {
+                           var members = validateAndCollectMembers();  // Can be empty
+                           if (members === null) {
                                return;
                            }
 
-                           $("#spinner").removeClass("d-none");
+                           // Show the loading overlay
+                           $("#loading-overlay").show();
 
                            $.ajax({
                                url: "' . admin_url('admin-ajax.php') . '",
@@ -163,10 +175,11 @@ function gem_create_group_shortcode() {
                                    action: "gem_create_group",
                                    group_name: groupName,
                                    local_currency: localCurrency,
-                                   members: members
+                                   members: members.length > 0 ? members : []  // Pass empty array if no members
                                },
                                success: function(response) {
-                                   $("#spinner").addClass("d-none");
+                                   // Hide the loading overlay
+                                   $("#loading-overlay").hide();
 
                                    if (response.success) {
                                        $("#create-group-modal").modal("hide");
@@ -180,7 +193,8 @@ function gem_create_group_shortcode() {
                                    }
                                },
                                error: function(response) {
-                                   $("#spinner").addClass("d-none");
+                                   // Hide the loading overlay
+                                   $("#loading-overlay").hide();
                                    alert("Error: " + response.responseText);
                                }
                            });
