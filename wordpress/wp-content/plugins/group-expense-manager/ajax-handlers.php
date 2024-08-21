@@ -124,8 +124,8 @@ function gem_add_expense() {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         if ($status_code == 200) {
-            wp_send_json_success('Expense added successfully.');
             delete_transient($group_name);
+            wp_send_json_success('Expense added successfully.');
         } elseif (isset($data['message'])) { 
             wp_send_json_error($data['message']);
         } else {
@@ -185,8 +185,8 @@ function gem_add_payment() {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         if ($status_code == 200) {
-            wp_send_json_success('Payment recorded successfully.');
             delete_transient($group_name);
+            wp_send_json_success('Payment recorded successfully.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
         } else {
@@ -241,8 +241,8 @@ function gem_add_user() {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         if ($status_code == 200) {
-            wp_send_json_success('User added successfully.');
             delete_transient($group_name);
+            wp_send_json_success('User added successfully.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
         } else {
@@ -297,8 +297,8 @@ function gem_add_currency() {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         if ($status_code == 200) {
-            wp_send_json_success('Currency added successfully.');
             delete_transient($group_name);
+            wp_send_json_success('Currency added successfully.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
         } else {
@@ -335,8 +335,8 @@ function gem_delete_group() {
         $data = json_decode($body, true);
 
         if ($response_code === 200) {
-            wp_send_json_success('Success');
             delete_transient($group_name);
+            wp_send_json_success('Success');
         } elseif ($response_code === 400) {
             // Handle specific error for pending balances
             wp_send_json_error('Unable to leave group, you have pending balances.');
@@ -390,8 +390,8 @@ function gem_remove_expense() {
         $data = json_decode($body, true);
 
         if ($status_code == 200) {
-            wp_send_json_success('Expense removed successfully.');
             delete_transient($group_name);
+            wp_send_json_success('Expense removed successfully.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
         } else {

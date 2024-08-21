@@ -132,27 +132,33 @@ function gem_group_details_shortcode() {
         $output .= '<table class="table">';
         $output .= '<tbody>';
         foreach ($group_details['logs'] as $log) {
-            // Use a regular expression to find email addresses in the log
-            $log_with_names = preg_replace_callback(
-                '/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/',
-                function ($matches) use ($email) {
-                    $email_in_log = $matches[0];
-        
-                    // If the email matches the current user's email, return 'You'
-                    if ($email_in_log === $email) {
-                        return 'You';
+            // Break the log into words by spaces
+            $words = explode(' ', $log);
+            
+            // Iterate through each word to check if it's a valid email
+            foreach ($words as &$word) {
+                // If the word is a valid email address, replace it with the display name
+                if (filter_var($word, FILTER_VALIDATE_EMAIL)) {
+                    // If the email matches the current user's email, replace with 'You'
+                    if ($word === $email) {
+                        $word = 'You';
+                    } else {
+                        // Otherwise, replace it with the user's display name if they exist in the group
+                        $user = get_user_by('email', $word);
+                        $word = ($user && isset($group_details['members']) && in_array($word, $group_details['members'])) 
+                            ? get_user_display_name($word, $group_details['members']) 
+                            : $word; // If user is not found, leave the email as-is
                     }
-        
-                    // Otherwise, return the display name if it exists, or the email as fallback
-                    $user = get_user_by('email', $email_in_log);
-                    return $user ? get_user_display_name($user, $group_details['members']) : $email_in_log;
-                },
-                $log
-            );
+                }
+            }
+            
+            // Rebuild the log string from the modified words
+            $modified_log = implode(' ', $words);
         
             // Output the modified log
-            $output .= '<tr><td>' . htmlspecialchars($log_with_names) . '</td></tr>';
+            $output .= '<tr><td>' . htmlspecialchars($modified_log) . '</td></tr>';
         }
+        
         $output .= '</tbody></table>';
         $output .= '</div>';
 
@@ -307,30 +313,36 @@ $output .= '</select>
             </div>';
 
         // Add User Modal
-        $output .= '<div class="modal fade" id="add-user-modal" tabindex="-1" role="dialog">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Add User</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <form id="add-user-form">
-                                        <label for="new-member-email">New Member Email:</label>
-                                        <input type="email" id="new-member-email" class="form-control" required>
-                                        <button type="submit" class="btn btn-primary mt-3">Submit</button>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <div class="spinner-border text-primary d-none" role="status">
-                                        <span class="sr-only">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>';
+$output .= '<div class="modal fade" id="add-user-modal" tabindex="-1" role="dialog">
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Add User</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="add-user-form" class="needs-validation" novalidate>
+                <div class="form-group">
+                    <label for="new-member-email">New Member Email:</label>
+                    <input type="email" id="new-member-email" class="form-control" required placeholder="Enter user email">
+                    <div class="invalid-feedback">
+                        Please enter a valid email address.
+                    </div>
+                    <div id="email-suggestions" class="list-group"></div> <!-- Suggestions will appear here -->
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Submit</button>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <div class="spinner-border text-primary d-none" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+</div>';
 
         // Remove Expense Modal
         $output .= '<div class="modal fade" id="remove-expense-modal" tabindex="-1" role="dialog">
@@ -608,8 +620,12 @@ $output .= '</select>
                             $("#add-currency-form").on("submit", function(event) {
                                 event.preventDefault();
                                 
-                                var currencyName = $("#currency-name").val().trim();
+                                var currencyName = $("#currency-name").val().trim().toUpperCase();
                                 var conversionRate = parseFloat($("#conversion-rate").val()).toFixed(4);
+
+                                // List of existing currencies and the local currency for validation
+                                var existingCurrencies = ' . json_encode(array_keys($group_details['currency_conversion_rates'])) . ';
+                                var localCurrency = "' . esc_js($group_details['local_currency']) . '";
 
                                 // Validate that the currency name does not exceed 20 characters
                                 if (currencyName.length > 20) {
@@ -617,7 +633,13 @@ $output .= '</select>
                                     return;
                                 }
 
-                                // Validate that the conversion rate is greater than 0
+                                // Validate that the currency name does not match previously added currencies or the local currency
+                                if (existingCurrencies.includes(currencyName) || currencyName === localCurrency) {
+                                    alert("Currency name already exists or matches the local currency.");
+                                    return;
+                                }
+
+                                // Validate that the conversion rate is greater than 0 and has up to 4 decimal places
                                 if (isNaN(conversionRate) || conversionRate <= 0) {
                                     alert("Conversion rate must be greater than 0 and valid up to 4 decimal places.");
                                     return;
@@ -660,6 +682,7 @@ $output .= '</select>
                                 });
                             });
 
+
                             // Display the new currency in the input prompt dynamically
                             $("#currency-name").on("input", function() {
                                 var currency = $(this).val().toUpperCase().trim();
@@ -672,10 +695,29 @@ $output .= '</select>
 
                             $("#add-user-form").submit(function(e) {
                                 e.preventDefault();
-                                var newMemberEmail = $("#new-member-email").val();
 
+                                var newMemberEmail = $("#new-member-email").val().trim().toLowerCase();
+                                var currentMembers = ' . json_encode($group_details['members']) . ';
+
+                                // Email validation regex pattern
+                                var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+
+                                // Validate if email is in correct format
+                                if (!emailPattern.test(newMemberEmail)) {
+                                    alert("Please enter a valid email address.");
+                                    return;
+                                }
+
+                                // Validate that the email is not already a member of the group
+                                if (currentMembers.includes(newMemberEmail)) {
+                                    alert("This user is already a member of the group.");
+                                    return;
+                                }
+
+                                // Show spinner
                                 $(".modal-footer .spinner-border").removeClass("d-none");
 
+                                // AJAX call to add the user
                                 $.ajax({
                                     url: "' . admin_url('admin-ajax.php') . '",
                                     type: "POST",
@@ -686,6 +728,7 @@ $output .= '</select>
                                         new_member_email: newMemberEmail
                                     },
                                     success: function(response) {
+                                        // Hide spinner
                                         $(".modal-footer .spinner-border").addClass("d-none");
                                         $("#add-user-modal").modal("hide");
                                         $("#response-message").html(response.data);
@@ -694,6 +737,7 @@ $output .= '</select>
                                         }, 2000);
                                     },
                                     error: function(error) {
+                                        // Hide spinner on error
                                         $(".modal-footer .spinner-border").addClass("d-none");
                                         $("#response-message").html("An error occurred: " + error);
                                     }
