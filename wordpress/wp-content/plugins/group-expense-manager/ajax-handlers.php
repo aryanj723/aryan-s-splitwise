@@ -152,8 +152,6 @@ function gem_add_payment() {
     $paid_to = isset($_POST['paid_to']) ? sanitize_email($_POST['paid_to']) : '';
     $currency = isset($_POST['currency']) ? sanitize_text_field($_POST['currency']) : '';
 
-    error_log("Debugging Record Payment: group_name = $group_name, email = $email, description = $description, amount = $amount, paid_by = $paid_by, paid_to = $paid_to, currency = $currency");
-
     if (empty($group_name) || empty($email) || empty($amount) || empty($paid_by) || empty($paid_to) || empty($currency)) {
         wp_send_json_error('Please provide all required fields.');
         return;
@@ -208,8 +206,6 @@ function gem_add_user() {
     $group_name = isset($_POST['group_name']) ? sanitize_text_field($_POST['group_name']) : '';
     $member_email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
     $new_member_email = isset($_POST['new_member_email']) ? sanitize_email($_POST['new_member_email']) : '';
-
-    error_log("Debugging Add User: group_name = $group_name, member_email = $member_email, new_member_email = $new_member_email");
 
     if (empty($group_name) || empty($member_email) || empty($new_member_email)) {
         wp_send_json_error('Please provide all required fields.');

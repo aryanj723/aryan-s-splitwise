@@ -173,45 +173,59 @@ function gem_group_details_shortcode() {
                 </button>
             </div>
             <div class="modal-body">
-                <form id="add-entry-form">
-                    <label for="entry-description">Description:</label>
-                    <input type="text" id="entry-description" class="form-control" required maxlength="20">
+                <form id="add-entry-form" class="needs-validation" novalidate>
+                    <div class="form-group">
+                        <label for="entry-description">Description:</label>
+                        <input type="text" id="entry-description" class="form-control form-control-sm" required maxlength="20" placeholder="Enter description">
+                        <div class="invalid-feedback">
+                            Please enter a description.
+                        </div>
+                    </div>
                     
-                    <label for="entry-amount">Amount:</label>
-                    <input type="number" id="entry-amount" class="form-control" required min="1" step="0.01">
+                    <div class="form-group">
+                        <label for="entry-amount">Amount:</label>
+                        <input type="number" id="entry-amount" class="form-control form-control-sm" required min="1" step="0.01" placeholder="Enter amount">
+                        <div class="invalid-feedback">
+                            Please enter a valid amount.
+                        </div>
+                    </div>
                     
-                    <label for="entry-paid-by">Paid By:</label>
-                    <select id="entry-paid-by" class="form-control">';
-
+                    <div class="form-group">
+                        <label for="entry-paid-by">Paid By:</label>
+                        <select id="entry-paid-by" class="form-control form-control-sm">';
 foreach ($group_details['members'] as $member) {
     $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
     $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
 }
 
 $output .= '</select>
+                    </div>
                     
-                    <label for="entry-currency">Currency:</label>
-                    <select id="entry-currency" class="form-control">
-                        <option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
-
+                    <div class="form-group">
+                        <label for="entry-currency">Currency:</label>
+                        <select id="entry-currency" class="form-control form-control-sm">
+                            <option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
 foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
     $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
 }
 
 $output .= '</select>
+                    </div>
                     
-                    <label for="entry-shares">Shares:</label>';
-
+                    <div class="form-group">
+                        <label for="entry-shares">Shares:</label>';
 foreach ($group_details['members'] as $member) {
     $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
-    $output .= '<div class="user-share" style="display: flex; align-items: center; margin-bottom: 10px;">
-                    <input type="checkbox" class="user-checkbox" data-user-id="' . htmlspecialchars($member) . '" style="margin-right: 10px;">
-                    <span class="user-name" style="width: 60%;">' . htmlspecialchars($display_name) . '</span>
-                    <input type="number" class="form-control share-input" name="share-' . htmlspecialchars($member) . '" style="width: 25%; margin-left: auto;" placeholder="Share" min="0" step="0.01" disabled>
+    $output .= '<div class="form-check mb-2">
+                    <input type="checkbox" class="form-check-input user-checkbox" data-user-id="' . htmlspecialchars($member) . '" id="checkbox-' . htmlspecialchars($member) . '">
+                    <label class="form-check-label" for="checkbox-' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</label>
+                    <input type="number" class="form-control form-control-sm share-input d-inline-block" style="width: 25%;" name="share-' . htmlspecialchars($member) . '" placeholder="Share" min="0" step="0.01" disabled>
                 </div>';
 }
 
-$output .= '<button type="submit" class="btn btn-primary mt-3">Submit</button>
+$output .= '</div>
+
+                    <button type="submit" class="btn btn-primary btn-block mt-3">Submit</button>
                 </form>
             </div>
             <div class="modal-footer">
@@ -235,37 +249,42 @@ $output .= '<div class="modal fade" id="settle-modal" tabindex="-1" role="dialog
         </div>
         <div class="modal-body">
             <form id="settle-form">
-                <label for="payment-amount">Amount:</label>
-                <input type="number" id="payment-amount" class="form-control" required min="1" step="0.01">
+                <div class="form-group">
+                    <label for="payment-amount">Amount:</label>
+                    <input type="number" id="payment-amount" class="form-control" required min="1" step="0.01">
+                </div>
                 
-                <label for="payment-paid-by">Paid By:</label>
-                <select id="payment-paid-by" class="form-control">';
+                <div class="form-group">
+                    <label for="payment-paid-by">Paid By:</label>
+                    <select id="payment-paid-by" class="form-control">';
 foreach ($group_details['members'] as $member) {
-$display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
-$output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
+    $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
+    $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
 }
-
 $output .= '</select>
-                
-                <label for="payment-paid-to">Paid To:</label>
-                <select id="payment-paid-to" class="form-control">';
+                </div>
+
+                <div class="form-group">
+                    <label for="payment-paid-to">Paid To:</label>
+                    <select id="payment-paid-to" class="form-control">';
 foreach ($group_details['members'] as $member) {
-$display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
-$output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
+    $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
+    $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
 }
-
 $output .= '</select>
-                
-                <label for="payment-currency">Currency:</label>
-                <select id="payment-currency" class="form-control">
-                    <option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
+                </div>
+
+                <div class="form-group">
+                    <label for="payment-currency">Currency:</label>
+                    <select id="payment-currency" class="form-control">
+                        <option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
 foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
-$output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
+    $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
 }
-
 $output .= '</select>
+                </div>
                 
-                <button type="submit" class="btn btn-primary mt-3">Submit</button>
+                <button type="submit" class="btn btn-primary btn-block mt-3">Submit</button>
             </form>
         </div>
         <div class="modal-footer">
@@ -276,6 +295,53 @@ $output .= '</select>
     </div>
 </div>
 </div>';
+
+// Prefill data
+$first_balance = null;
+foreach ($group_details['balances'] as $balance) {
+    if ($balance[0] == $email || $balance[1] == $email) {
+        $first_balance = $balance;
+        break;
+    }
+}
+$output .= "<script>
+    jQuery(document).ready(function($) {
+        // Prefill when modal is opened
+        $('#settle-modal').on('show.bs.modal', function() {
+            var balance = " . json_encode($first_balance) . ";
+            if (balance) {
+                var currentUserEmail = '" . esc_js($email) . "';
+                var amount = balance[2];
+                var paidBy, paidTo;
+
+                // If the current user is the debtor (the first entry in the balance array)
+                if (balance[0] === currentUserEmail) {
+                    paidBy = balance[0];  // The current user is paying
+                    paidTo = balance[1];  // Paying to the second user
+                } else if (balance[1] === currentUserEmail) {
+                    paidBy = balance[0];  // The first user is paying
+                    paidTo = balance[1];  // Paying to the current user
+                } else {
+                    // No relevant balance found, clear fields
+                    $('#payment-amount').val('');
+                    $('#payment-paid-by').val('');
+                    $('#payment-paid-to').val('');
+                    return; // Stop further processing
+                }
+
+                // Prefill the form fields
+                $('#payment-amount').val(amount);
+                $('#payment-paid-by').val(paidBy);
+                $('#payment-paid-to').val(paidTo);
+            } else {
+                // Clear fields if no balance is found
+                $('#payment-amount').val('');
+                $('#payment-paid-by').val('');
+                $('#payment-paid-to').val('');
+            }
+        });
+    });
+</script>";
 
 
         // Add Currency Modal
@@ -406,166 +472,168 @@ $output .= '<div class="modal fade" id="add-user-modal" tabindex="-1" role="dial
         $output .= '<script>
                         jQuery(document).ready(function($) {
                             $("#add-entry-form").on("submit", function(event) {
-                                event.preventDefault();
+    event.preventDefault();
 
-                                var groupName = "' . esc_js($group_name) . '";
-                                var userEmail = "' . esc_js($email) . '";
-                                var description = $("#entry-description").val().trim();
-                                var amount = parseFloat($("#entry-amount").val());
-                                var paidBy = $("#entry-paid-by").val();
-                                var currency = $("#entry-currency").val();
-                                var validShares = true;
-                                var totalShare = 0;
+    var groupName = "' . esc_js($group_name) . '";
+    var userEmail = "' . esc_js($email) . '";
+    var description = $("#entry-description").val().trim();
+    var amount = parseFloat($("#entry-amount").val());
+    var paidBy = $("#entry-paid-by").val();
+    var currency = $("#entry-currency").val();
+    var validShares = true;
+    var totalShare = 0;
 
-                                // Validate description
-                                if (description === "") {
-                                    alert("Description cannot be empty.");
-                                    return;
-                                }
+    // Validate description
+    if (description === "") {
+        alert("Description cannot be empty.");
+        return;
+    }
 
-                                // Check if description exceeds 20 characters
-                                if (description.length > 20) {
-                                    alert("Description must not exceed 20 characters.");
-                                    return;
-                                }
+    // Check if description exceeds 20 characters
+    if (description.length > 20) {
+        alert("Description must not exceed 20 characters.");
+        return;
+    }
 
-                                // Validate amount
-                                if (isNaN(amount) || amount < 1) {
-                                    alert("Amount must be at least 1.");
-                                    return;
-                                }
+    // Validate amount
+    if (isNaN(amount) || amount < 1) {
+        alert("Amount must be at least 1.");
+        return;
+    }
 
-                                // Collect shares
-                                var shares = {};
-                                $(".user-checkbox:checked").each(function() {
-                                    var userId = $(this).data("user-id");
-                                    var shareAmount = parseFloat($(this).closest(".user-share").find(".share-input").val());
+    // Collect shares
+    var shares = {};
+    $(".user-checkbox:checked").each(function() {
+        var userId = $(this).data("user-id");
+        var shareAmount = parseFloat($(this).closest(".form-check").find(".share-input").val()); // Adjusted for Bootstrap
 
-                                    if (isNaN(shareAmount) || shareAmount < 0) {
-                                        alert("Shares must be at least 0 and must be valid.");
-                                        validShares = false;
-                                        return false;
-                                    }
+        if (isNaN(shareAmount) || shareAmount < 0) {
+            alert("Shares must be at least 0 and must be valid.");
+            validShares = false;
+            return false;
+        }
 
-                                    shares[userId] = shareAmount;
-                                    totalShare += shareAmount;
-                                });
+        shares[userId] = shareAmount;
+        totalShare += shareAmount;
+    });
 
-                                // Validate if shares add up correctly
-                                if (!validShares || Math.abs(totalShare - amount) > 1) {
-                                    alert("Shares do not add up to the total amount.");
-                                    return;
-                                }
+    // Validate if shares add up correctly
+    if (!validShares || Math.abs(totalShare - amount) > 1) {
+        alert("Shares do not add up to the total amount.");
+        return;
+    }
 
-                                // Show spinner
-                                $(".modal-footer .spinner-border").removeClass("d-none");
+    // Show spinner
+    $(".modal-footer .spinner-border").removeClass("d-none");
 
-                                // AJAX call to add the expense
-                                $.ajax({
-                                    url: "' . esc_url(admin_url('admin-ajax.php')) . '",
-                                    type: "POST",
-                                    data: {
-                                        action: "gem_add_expense",
-                                        group_name: groupName,
-                                        email: userEmail,
-                                        description: description,
-                                        amount: amount,
-                                        paid_by: paidBy,
-                                        shares: shares,
-                                        currency: currency
-                                    },
-                                    success: function(response) {
-                                        // Hide spinner
-                                        $(".modal-footer .spinner-border").addClass("d-none");
+    // AJAX call to add the expense
+    $.ajax({
+        url: "' . esc_url(admin_url('admin-ajax.php')) . '",
+        type: "POST",
+        data: {
+            action: "gem_add_expense",
+            group_name: groupName,
+            email: userEmail,
+            description: description,
+            amount: amount,
+            paid_by: paidBy,
+            shares: shares,
+            currency: currency
+        },
+        success: function(response) {
+            // Hide spinner
+            $(".modal-footer .spinner-border").addClass("d-none");
 
-                                        if (response.success) {
-                                            // Close the modal first
-                                            $("#add-entry-modal").modal("hide");
+            if (response.success) {
+                // Close the modal first
+                $("#add-entry-modal").modal("hide");
 
-                                            // After modal is closed, show the success message
-                                            alert("Expense added successfully!");
-                                            location.reload();
-                                        } else {
-                                            alert("Failed to add expense: " + response.data);
-                                        }
-                                    },
-                                    error: function(error) {
-                                        // Hide spinner in case of error
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-                                        alert("An error occurred: " + error.statusText);
-                                    }
-                                });
-                            });
+                // After modal is closed, show the success message
+                alert("Expense added successfully!");
+                location.reload();
+            } else {
+                alert("Failed to add expense: " + response.data);
+            }
+        },
+        error: function(error) {
+            // Hide spinner in case of error
+            $(".modal-footer .spinner-border").addClass("d-none");
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+});
+
 
 
                             $("#settle-form").on("submit", function(event) {
-                                event.preventDefault();
+    event.preventDefault();
 
-                                var groupName = "' . esc_js($group_name) . '";
-                                var userEmail = "' . esc_js($email) . '";
-                                var description = ""; // Set description to empty string
-                                var amount = parseFloat($("#payment-amount").val()).toFixed(2);
-                                var paidBy = $("#payment-paid-by").val();
-                                var paidTo = $("#payment-paid-to").val();
-                                var currency = $("#payment-currency").val();
+    var groupName = "' . esc_js($group_name) . '";
+    var userEmail = "' . esc_js($email) . '";
+    var description = ""; // Set description to empty string
+    var amount = parseFloat($("#payment-amount").val()).toFixed(2);
+    var paidBy = $("#payment-paid-by").val();
+    var paidTo = $("#payment-paid-to").val();
+    var currency = $("#payment-currency").val();
 
-                                // Validate amount
-                                if (isNaN(amount) || amount <= 0) {
-                                    alert("Amount must be greater than 0.");
-                                    return;
-                                }
+    // Validate amount
+    if (isNaN(amount) || amount <= 0) {
+        alert("Amount must be greater than 0.");
+        return;
+    }
 
-                                // Ensure only up to 2 decimal places
-                                if (amount.toString().split(".")[1] && amount.toString().split(".")[1].length > 2) {
-                                    alert("Amount must be a valid number with up to 2 decimal places.");
-                                    return;
-                                }
+    // Ensure only up to 2 decimal places
+    if (amount.toString().split(".")[1] && amount.toString().split(".")[1].length > 2) {
+        alert("Amount must be a valid number with up to 2 decimal places.");
+        return;
+    }
 
-                                // Check that payer and payee are different
-                                if (paidBy === paidTo) {
-                                    alert("The payer and payee must be different.");
-                                    return;
-                                }
+    // Check that payer and payee are different
+    if (paidBy === paidTo) {
+        alert("The payer and payee must be different.");
+        return;
+    }
 
-                                // Show spinner
-                                $(".modal-footer .spinner-border").removeClass("d-none");
+    // Show spinner
+    $(".modal-footer .spinner-border").removeClass("d-none");
 
-                                // AJAX call to record the payment
-                                $.ajax({
-                                    url: "' . esc_url(admin_url('admin-ajax.php')) . '",
-                                    type: "POST",
-                                    data: {
-                                        action: "gem_add_payment",
-                                        group_name: groupName,
-                                        email: userEmail,
-                                        description: description, // Pass empty string
-                                        amount: amount,
-                                        paid_by: paidBy,
-                                        paid_to: paidTo,
-                                        currency: currency
-                                    },
-                                    success: function(response) {
-                                        // Hide spinner
-                                        $(".modal-footer .spinner-border").addClass("d-none");
+    // AJAX call to record the payment
+    $.ajax({
+        url: "' . esc_url(admin_url('admin-ajax.php')) . '",
+        type: "POST",
+        data: {
+            action: "gem_add_payment",
+            group_name: groupName,
+            email: userEmail,
+            description: description, // Pass empty string
+            amount: amount,
+            paid_by: paidBy,
+            paid_to: paidTo,
+            currency: currency
+        },
+        success: function(response) {
+            // Hide spinner
+            $(".modal-footer .spinner-border").addClass("d-none");
 
-                                        if (response.success) {
-                                            // Close the modal first
-                                            $("#settle-modal").modal("hide");
+            if (response.success) {
+                // Close the modal first
+                $("#settle-modal").modal("hide");
 
-                                            // After modal is closed, show the success message
-                                            alert("Payment recorded successfully!");
-                                            location.reload();
-                                        } else {
-                                            alert("Failed to record payment: " + response.data);
-                                        }
-                                    },
-                                    error: function(error) {
-                                        // Hide spinner in case of error
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-                                        alert("An error occurred: " + error.statusText);
-                                    }
-                                });
-                            });
+                // After modal is closed, show the success message
+                alert("Payment recorded successfully!");
+                location.reload();
+            } else {
+                alert("Failed to record payment: " + response.data);
+            }
+        },
+        error: function(error) {
+            // Hide spinner in case of error
+            $(".modal-footer .spinner-border").addClass("d-none");
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+});
+
 
 
 
