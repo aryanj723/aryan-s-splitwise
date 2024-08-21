@@ -22,12 +22,13 @@ function gem_my_groups_shortcode() {
         return "Something went wrong: $error_message";
     } else {
         $groups = json_decode(wp_remote_retrieve_body($response), true);
-        $output = '<div class="container group-list">';
+        $output = '<div class="container mt-4">';  // Bootstrap container for mobile responsiveness
         
         // Check if there are no groups found
         if (empty($groups)) {
             $output .= '<p>No groups found for you... go ahead and create one with the button above. Don\'t worry, everything is free (and will be) on this app 😊.</p>';
         } else {
+            $output .= '<div class="row">';  // Start Bootstrap row
             foreach ($groups as $group_raw) {
                 // Ensure that $group_raw contains a '$' for splitting
                 if (strpos($group_raw, '$') !== false) {
@@ -54,18 +55,16 @@ function gem_my_groups_shortcode() {
                     $formatted_date = 'Unknown creation date';
                 }
 
-                $output .= '<div class="card group-button">';
+                // Group Card Layout for Bootstrap
+                $output .= '<div class="col-md-4 col-sm-6 mb-4">';  // Bootstrap column (4 on desktop, 6 on mobile)
+                $output .= '<div class="card h-100">';  // Full-height card
                 $output .= '<div class="card-body text-center">';
-                $output .= '<h5 class="card-title">';
-                $output .= '<button class="btn btn-primary group-name-btn" onclick="window.location.href=\'';
-                $output .= site_url('/group-details?group_name=' . urlencode($group_raw));
-                $output .= '\'">' . htmlspecialchars($group_name) . '</button>';
-                $output .= '</h5>';
+                $output .= '<h5 class="card-title">' . htmlspecialchars($group_name) . '</h5>';
                 $output .= '<p class="card-text" style="font-size: 0.75em;">Created: ' . htmlspecialchars($formatted_date) . '</p>';
                 $output .= '<div class="balance-info" id="balance-info-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $group_name) . '"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>'; // Spinner for loading balance
-                $output .= '<button class="btn btn-danger delete-btn" style="display:none;" id="exit-btn-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $group_name) . '" onclick="deleteGroup(this, \'' . urlencode($group_raw) . '\')" title="Exit Group">';
-                $output .= '<i class="bi bi-trash"></i>';
-                $output .= '</button>';
+                $output .= '<a href="' . site_url('/group-details?group_name=' . urlencode($group_raw)) . '" class="btn btn-primary w-100 mt-2">View Group</a>';
+                $output .= '<button class="btn btn-danger w-100 mt-2 delete-btn" style="display:none;" id="exit-btn-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $group_name) . '" onclick="deleteGroup(this, \'' . urlencode($group_raw) . '\')" title="Exit Group">Exit Group</button>';
+                $output .= '</div>';
                 $output .= '</div>';
                 $output .= '</div>';
                 
@@ -117,12 +116,11 @@ function gem_my_groups_shortcode() {
                     });
                 });
                 </script>';
-                
             }
+            $output .= '</div>';  // Close Bootstrap row
         }
         
-        $output .= '</div>';
-        $output .= '</div>';
+        $output .= '</div>';  // Close container
 
         // JavaScript function for deleting groups
         $output .= '<script>';

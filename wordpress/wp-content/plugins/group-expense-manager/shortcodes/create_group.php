@@ -6,8 +6,6 @@ function gem_create_group_shortcode() {
         return 'You must be logged in to create a group.';
     }
 
-    // Properly wrap the button in a container
-
     $output = '<div class="modal fade" id="create-group-modal" tabindex="-1" role="dialog">
                    <div class="modal-dialog modal-dialog-centered" role="document">
                        <div class="modal-content">
@@ -34,7 +32,7 @@ function gem_create_group_shortcode() {
                                            <div id="local-currency-error" class="text-danger"></div>
                                        </div>
                                    </div>
-                                   <div id="members-container" class="form-row"></div>
+                                   <div id="members-container" class="form-row" style="max-height: 300px; overflow-y: auto;"></div> <!-- Scrollable area -->
                                    <div class="form-row">
                                        <div class="col-6">
                                            <button type="button" id="add-member-btn" class="btn btn-secondary btn-block">Add Member</button>
@@ -80,20 +78,20 @@ function gem_create_group_shortcode() {
                            return true;
                        }
 
-                       // Function to validate and collect members
+                       // Function to validate and collect members, skip empty fields
                        function validateAndCollectMembers() {
                            var members = [];
                            var valid = true;
                            var emails = {};
+                           var duplicateAlertShown = false;
 
                            $("input[name=\'group-member\']").each(function() {
                                var email = $(this).val().trim().toLowerCase();
                                var emailError = $(this).next(".group-member-error");
 
                                if (email === "") {
-                                   emailError.text("Email cannot be empty.");
-                                   valid = false;
-                                   return false;
+                                   // Skip empty fields
+                                   return true;
                                }
 
                                var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -104,6 +102,10 @@ function gem_create_group_shortcode() {
                                }
 
                                if (emails[email]) {
+                                   if (!duplicateAlertShown) {
+                                       alert("Duplicate email found: " + email);
+                                       duplicateAlertShown = true;
+                                   }
                                    emailError.text("Duplicate email found.");
                                    valid = false;
                                    return false;
@@ -119,23 +121,23 @@ function gem_create_group_shortcode() {
 
                        // Function to clear form fields and suggestions
                        function clearFormAndSuggestions() {
-    $("#group-name").val("");
-    $("#local-currency").val("");
-    $(".group-member-input").val("");  // Clear member inputs
-    $(".group-member-error").text(""); // Clear any error messages
-    $("#group-name-error").text("");   // Clear group name errors
-    $("#local-currency-error").text(""); // Clear currency errors
-    $(".suggestion-box").hide().empty(); // Clear any suggestion boxes
+                           $("#group-name").val("");
+                           $("#local-currency").val("");
+                           $(".group-member-input").val("");  // Clear member inputs
+                           $(".group-member-error").text(""); // Clear any error messages
+                           $("#group-name-error").text("");   // Clear group name errors
+                           $("#local-currency-error").text(""); // Clear currency errors
+                           $(".suggestion-box").hide().empty(); // Clear any suggestion boxes
 
-    // Clear all dynamically added member inputs
-    $("#members-container").empty();
-}
+                           // Clear all dynamically added member inputs
+                           $("#members-container").empty();
+                       }
 
                        // Reset form when modal is hidden
                        $("#create-group-modal").on("hidden.bs.modal", function () {
-    clearFormAndSuggestions();
-    $("#create-group-modal").removeClass("show").css("display", "none");
-});
+                           clearFormAndSuggestions();
+                           $("#create-group-modal").removeClass("show").css("display", "none");
+                       });
 
                        // Form submission
                        $("#create-group-form").submit(function(event) {
