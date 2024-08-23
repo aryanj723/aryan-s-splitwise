@@ -454,7 +454,7 @@ function gem_search_currency() {
     $search_term = sanitize_text_field($_POST['search_term']);
     
     // Check if the search term is too short
-    if (strlen($search_term) < 1) {
+    if (strlen($search_term) < 3) {
         wp_send_json_error('Search term is too short');
     }
 
@@ -492,7 +492,7 @@ function gem_search_currency() {
         'CLP' => 'Chilean Peso',
         'CNY' => 'Chinese Yuan',
         'COP' => 'Colombian Peso',
-        'CRC' => 'Costa Rican Colón',
+        'CRC' => 'Costa Rican Colon',
         'CUP' => 'Cuban Peso',
         'CVE' => 'Cape Verdean Escudo',
         'CZK' => 'Czech Koruna',
@@ -506,7 +506,7 @@ function gem_search_currency() {
         'EUR' => 'Euro',
         'FJD' => 'Fijian Dollar',
         'FKP' => 'Falkland Islands Pound',
-        'FOK' => 'Faroese Króna',
+        'FOK' => 'Faroese Krona',
         'GBP' => 'British Pound Sterling',
         'GEL' => 'Georgian Lari',
         'GHS' => 'Ghanaian Cedi',
@@ -525,7 +525,7 @@ function gem_search_currency() {
         'INR' => 'Indian Rupee',
         'IQD' => 'Iraqi Dinar',
         'IRR' => 'Iranian Rial',
-        'ISK' => 'Icelandic Króna',
+        'ISK' => 'Icelandic Krona',
         'JMD' => 'Jamaican Dollar',
         'JOD' => 'Jordanian Dinar',
         'JPY' => 'Japanese Yen',
@@ -549,7 +549,7 @@ function gem_search_currency() {
         'MGA' => 'Malagasy Ariary',
         'MKD' => 'Macedonian Denar',
         'MMK' => 'Burmese Kyat',
-        'MNT' => 'Mongolian Tögrög',
+        'MNT' => 'Mongolian Togrog',
         'MOP' => 'Macanese Pataca',
         'MRU' => 'Mauritanian Ouguiya',
         'MUR' => 'Mauritian Rupee',
@@ -560,7 +560,7 @@ function gem_search_currency() {
         'MZN' => 'Mozambican Metical',
         'NAD' => 'Namibian Dollar',
         'NGN' => 'Nigerian Naira',
-        'NIO' => 'Nicaraguan Córdoba',
+        'NIO' => 'Nicaraguan Cordoba',
         'NOK' => 'Norwegian Krone',
         'NPR' => 'Nepalese Rupee',
         'NZD' => 'New Zealand Dollar',
@@ -570,8 +570,8 @@ function gem_search_currency() {
         'PGK' => 'Papua New Guinean Kina',
         'PHP' => 'Philippine Peso',
         'PKR' => 'Pakistani Rupee',
-        'PLN' => 'Polish Złoty',
-        'PYG' => 'Paraguayan Guaraní',
+        'PLN' => 'Polish Zloty',
+        'PYG' => 'Paraguayan Guarani',
         'QAR' => 'Qatari Riyal',
         'RON' => 'Romanian Leu',
         'RSD' => 'Serbian Dinar',
@@ -588,15 +588,15 @@ function gem_search_currency() {
         'SOS' => 'Somali Shilling',
         'SRD' => 'Surinamese Dollar',
         'SSP' => 'South Sudanese Pound',
-        'STN' => 'São Tomé and Príncipe Dobra',
-        'SVC' => 'Salvadoran Colón',
+        'STN' => 'Sao Tome and Principe Dobra',
+        'SVC' => 'Salvadoran Colon',
         'SYP' => 'Syrian Pound',
         'SZL' => 'Eswatini Lilangeni',
         'THB' => 'Thai Baht',
         'TJS' => 'Tajikistani Somoni',
         'TMT' => 'Turkmenistani Manat',
         'TND' => 'Tunisian Dinar',
-        'TOP' => 'Tongan Paʻanga',
+        'TOP' => 'Tongan Paanga',
         'TRY' => 'Turkish Lira',
         'TTD' => 'Trinidad and Tobago Dollar',
         'TWD' => 'New Taiwan Dollar',
@@ -606,8 +606,8 @@ function gem_search_currency() {
         'USD' => 'United States Dollar',
         'UYU' => 'Uruguayan Peso',
         'UZS' => 'Uzbekistani Som',
-        'VES' => 'Venezuelan Bolívar Soberano',
-        'VND' => 'Vietnamese Đồng',
+        'VES' => 'Venezuelan Bolivar Soberano',
+        'VND' => 'Vietnamese Dong',
         'VUV' => 'Vanuatu Vatu',
         'WST' => 'Samoan Tala',
         'XAF' => 'Central African CFA Franc',
@@ -643,14 +643,21 @@ function gem_search_currency() {
     }
 
     $results = [];
+    $search_term = trim($search_term);  // Remove extra spaces from the search term
+    $search_term_lower = strtolower($search_term);  // Convert search term to lowercase once for efficiency
+
     foreach ($currencies as $code => $rate) {
-        $full_name = isset($currency_names[$code]) ? $currency_names[$code] : $code; // Use code if name is missing
-        
+        $full_name = isset($currency_names[$code]) ? $currency_names[$code] : $code;  // Use code if name is missing
+
+        // Convert both code and full_name to lowercase for case-insensitive comparison
+        $code_lower = strtolower($code);
+        $full_name_lower = strtolower($full_name);
+
         // Search for matching currency code or full name
-        if (stripos($code, $search_term) !== false || stripos($full_name, $search_term) !== false) {
+        if (strpos($code_lower, $search_term_lower) !== false || strpos($full_name_lower, $search_term_lower) !== false) {
             $results[] = [
-                'currency' => $code,
-                'full_name' => $full_name
+                'currency' => strtoupper($code),  // Ensure the code is uppercase
+                'full_name' => strtoupper($full_name)  // Ensure the full name is uppercase
             ];
         }
     }

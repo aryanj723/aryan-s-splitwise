@@ -45,7 +45,7 @@ function gem_display_expenses($entries, $members) {
     foreach ($entries as $entry) {
         if ($entry['type'] !== 'settlement') {
             $display = gem_get_entry_display($entry, $members);
-            $class = $entry['cancelled'] ? ' class="cancelled"' : '';
+            $class = $entry['cancelled'] ? ' style="text-decoration: line-through; color: grey;"' : '';
             $output .= '<tr' . $class . '>';
             $output .= '<td>' . $entry['description'] . '</td>';
             $output .= '<td>' . $entry['amount'] . '</td>';
