@@ -658,9 +658,13 @@ function gem_search_currency() {
     wp_send_json_success($results);
 }
 
+add_action('wp_ajax_gem_get_exchange_rate', 'gem_get_exchange_rate');
+add_action('wp_ajax_nopriv_gem_get_exchange_rate', 'gem_get_exchange_rate');
 
+function gem_get_exchange_rate() {
+    $from_currency = sanitize_text_field($_POST['currency']);
+    $to_currency = sanitize_text_field($_POST['to_currency']);  // Capture the dynamic local currency
 
-function gem_get_exchange_rate($from_currency, $to_currency) {
     // Fetch the cached rates or pull from API if necessary
     $currencies = get_transient('gem_currency_list');
     
@@ -668,14 +672,14 @@ function gem_get_exchange_rate($from_currency, $to_currency) {
     if ($currencies === false) {
         $response = wp_remote_get('https://openexchangerates.org/api/latest.json?app_id=b31680b69644433d8750d5ff5f2f06cb');
         if (is_wp_error($response)) {
-            return 'Failed to retrieve currency data';
+            wp_send_json_error('Failed to retrieve currency data');
         }
 
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
         if (!isset($data['rates'])) {
-            return 'Invalid API response';
+            wp_send_json_error('Invalid API response');
         }
 
         // Store rates in the transient for 24 hours
@@ -685,13 +689,13 @@ function gem_get_exchange_rate($from_currency, $to_currency) {
 
     // Ensure both currencies exist
     if (!isset($currencies[$from_currency]) || !isset($currencies[$to_currency])) {
-        return 'Invalid currency codes';
+        wp_send_json_error('Invalid currency code');
     }
 
-    // Calculate the conversion rate
-    $rate = $currencies[$to_currency] / $currencies[$from_currency];
-    
-    return round($rate, 6);  // Return exchange rate with up to 6 decimal places
+    // Calculate the conversion rate between `from_currency` and `to_currency`
+    $conversion_rate = $currencies[$to_currency] / $currencies[$from_currency];  // Fixed this line
+
+    wp_send_json_success($conversion_rate);  // Return the conversion rate
 }
 
 ?>

@@ -345,46 +345,47 @@ $output .= "<script>
 
 
 $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="dialog">
-<div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">Add Currency</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <div class="modal-body">
-            <form id="add-currency-form">
-                <div class="form-group">
-                    <label for="currency-name">Currency Name:</label>
-                    <input type="text" id="currency-name" class="form-control form-control-sm" required placeholder="Enter new currency (e.g., EUR)" maxlength="10">
-                    <div id="currency-suggestions" class="list-group" style="display:none; max-height: 100px; overflow-y: auto; background: #fff; border: 1px solid #ccc;"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="conversion-rate-display">Conversion Rate:</label>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">1 <span id="currency-display">[Currency]</span> =</span>
-                        </div>
-                        <input type="number" id="conversion-rate" class="form-control form-control-sm" required placeholder="Conversion rate" step="0.000001" min="0.000001" max="9999999999.999999">
-                        <div class="input-group-append">
-                            <span class="input-group-text">' . htmlspecialchars($group_details['local_currency']) . '</span>
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Currency</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="add-currency-form">
+                    <div class="form-group">
+                        <label for="currency-name">Currency Name:</label>
+                        <input type="text" id="currency-name" class="form-control form-control-sm" required placeholder="Enter new currency (e.g., EUR)" maxlength="10">
+                        <div id="currency-suggestions" class="list-group" style="display:none; max-height: 100px; overflow-y: auto; background: #fff; border: 1px solid #ccc;"></div>
+                    </div>
+                    
+                    <div class="form-group" id="conversion-rate-group" style="display: none;">
+                        <label for="conversion-rate-display">Conversion Rate:</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">1 <span id="currency-display">[Currency]</span> =</span>
+                            </div>
+                            <input type="number" id="conversion-rate" class="form-control form-control-sm" required placeholder="Conversion rate" step="0.000001" min="0.000001" max="9999999999.999999">
+                            <div class="input-group-append">
+                                <span class="input-group-text">' . htmlspecialchars($group_details['local_currency']) . '</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <button type="submit" class="btn btn-primary btn-block mt-3">Submit</button>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <div class="spinner-border text-primary d-none" role="status">
-                <span class="sr-only">Loading...</span>
+                    <button type="submit" class="btn btn-primary btn-block mt-3">Submit</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="spinner-border text-primary d-none" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
             </div>
         </div>
     </div>
-</div>
 </div>';
+
 
 
         // Add User Modal
@@ -695,130 +696,174 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                                 }
                             });
 
-                            $("#add-currency-form").on("submit", function(event) {
-                                event.preventDefault();
+                            // Add Currency Form Submission
+// Add Currency Form Submission
+$("#add-currency-form").on("submit", function(event) {
+    event.preventDefault();
 
-                                var currencyName = $("#currency-name").val().trim().toUpperCase();
-                                var conversionRate = parseFloat($("#conversion-rate").val()).toFixed(6); // Updated to 6 decimal places
+    var currencyName = $("#currency-name").val().trim().toUpperCase();
+    var conversionRate = parseFloat($("#conversion-rate").val()).toFixed(6); // Updated to 6 decimal places
 
-                                // List of existing currencies and the local currency for validation
-                                var existingCurrencies = ' . json_encode(array_keys($group_details["currency_conversion_rates"])) . ';
-                                var localCurrency = "' . esc_js($group_details["local_currency"]) . '";
+    // List of existing currencies and the local currency for validation
+    var existingCurrencies = ' . json_encode(array_keys($group_details["currency_conversion_rates"])) . ';
+    var localCurrency = "' . esc_js($group_details["local_currency"]) . '";
 
-                                // Validate that the currency name does not exceed 20 characters
-                                if (currencyName.length > 20) {
-                                    alert("Currency name must not exceed 20 characters.");
-                                    return;
-                                }
+    // Validate that the currency name does not exceed 20 characters
+    if (currencyName.length > 20) {
+        alert("Currency name must not exceed 20 characters.");
+        return;
+    }
 
-                                // Validate that the currency name does not match previously added currencies or the local currency
-                                if (existingCurrencies.includes(currencyName) || currencyName === localCurrency) {
-                                    alert("Currency name already exists or matches the local currency.");
-                                    return;
-                                }
+    // Validate that the currency name does not match previously added currencies or the local currency
+    if (existingCurrencies.includes(currencyName) || currencyName === localCurrency) {
+        alert("Currency name already exists or matches the local currency.");
+        return;
+    }
 
-                                // Validate that the conversion rate is greater than 0 and has up to 6 decimal places
-                                if (isNaN(conversionRate) || conversionRate <= 0) {
-                                    alert("Conversion rate must be greater than 0 and valid up to 6 decimal places.");
-                                    return;
-                                }
+    // Validate that the conversion rate is greater than 0 and has up to 6 decimal places
+    if (isNaN(conversionRate) || conversionRate <= 0) {
+        alert("Conversion rate must be greater than 0 and valid up to 6 decimal places.");
+        return;
+    }
 
-                                // Show spinner
-                                $(".modal-footer .spinner-border").removeClass("d-none");
+    // Show spinner
+    $(".modal-footer .spinner-border").removeClass("d-none");
 
-                                // AJAX call to add the currency
-                                $.ajax({
-                                    url: "' . esc_url(admin_url('admin-ajax.php')) . '",
-                                    type: "POST",
-                                    data: {
-                                        action: "gem_add_currency",
-                                        group_name: "' . esc_js($group_name) . '",
-                                        email: "' . esc_js($email) . '",
-                                        currency: currencyName,
-                                        conversion_rate: conversionRate
-                                    },
-                                    success: function(response) {
-                                        // Hide spinner
-                                        $(".modal-footer .spinner-border").addClass("d-none");
+    // AJAX call to add the currency
+    $.ajax({
+        url: "' . esc_url(admin_url('admin-ajax.php')) . '",
+        type: "POST",
+        data: {
+            action: "gem_add_currency",
+            group_name: "' . esc_js($group_name) . '",
+            email: "' . esc_js($email) . '",
+            currency: currencyName,
+            conversion_rate: conversionRate
+        },
+        success: function(response) {
+            // Hide spinner
+            $(".modal-footer .spinner-border").addClass("d-none");
 
-                                        if (response.success) {
-                                            // Close the modal first
-                                            $("#add-currency-modal").modal("hide");
+            if (response.success) {
+                // Close the modal first
+                $("#add-currency-modal").modal("hide");
 
-                                            // After modal is closed, show the success message
-                                            alert("Currency added successfully!");
-                                            location.reload();
-                                        } else {
-                                            alert("Failed to add currency: " + response.data);
-                                        }
-                                    },
-                                    error: function(error) {
-                                        // Hide spinner in case of error
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-                                        alert("An error occurred: " + error.statusText);
-                                    }
-                                });
-                            });
+                // After modal is closed, show the success message
+                alert("Currency added successfully!");
+                location.reload();
+            } else {
+                alert("Failed to add currency: " + response.data);
+            }
+        },
+        error: function(error) {
+            // Hide spinner in case of error
+            $(".modal-footer .spinner-border").addClass("d-none");
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+});
 
-                            // Display the new currency in the input prompt dynamically
-                            $("#currency-name").on("input", function() {
-                                var search_term = $(this).val().trim().toUpperCase();
-                                
-                                if (search_term.length > 0) {
-                                    $.ajax({
-                                        url: "' . esc_url(admin_url('admin-ajax.php')) . '",
-                                        method: "POST",
-                                        data: {
-                                            action: "gem_search_currency",  // Corrected the action name to match the handler
-                                            search_term: search_term
-                                        },
-                                        success: function(response) {
-                                            $("#currency-suggestions").empty().show();
-                                            if (response.success && response.data.length > 0) {
-                                                $.each(response.data, function(index, currency) {
-                                                    $("#currency-suggestions").append("<button type=\\"button\\" class=\\"list-group-item list-group-item-action\\" data-currency=\\"" + currency.currency + "\\">" + currency.full_name + " (" + currency.currency + ")</button>");
-                                                });
-                                            } else {
-                                                $("#currency-suggestions").hide();
-                                            }
-                                        },
-                                        error: function() {
-                                            $("#currency-suggestions").hide();
-                                        }
-                                    });
-                                } else {
-                                    $("#currency-suggestions").hide();
-                                }
-                                $("#conversion-rate").val("");  // Clear rate if the user changes currency input
-                            });
+// Initially hide the conversion rate input box and disable the submit button
+$("#conversion-rate-group").hide();
+$("#add-currency-form button[type=\"submit\"]").prop("disabled", true);
 
-                            // Handle currency selection from suggestions
-                            $(document).on("click", ".list-group-item", function() {
-                                var selectedCurrency = $(this).data("currency");
-                                $("#currency-name").val(selectedCurrency);
-                                $("#currency-display").text(selectedCurrency);
-                                $("#currency-suggestions").hide();
+// Display the new currency in the input prompt dynamically
+$("#currency-name").on("input", function() {
+    var search_term = $(this).val().trim().toUpperCase();
+    
+    if (search_term.length > 0) {
+        $.ajax({
+            url: "' . esc_url(admin_url('admin-ajax.php')) . '",
+            method: "POST",
+            data: {
+                action: "gem_search_currency",
+                search_term: search_term
+            },
+            success: function(response) {
+                $("#currency-suggestions").empty().show();
+                if (response.success && response.data.length > 0) {
+                    $.each(response.data, function(index, currency) {
+                        $("#currency-suggestions").append("<button type=\"button\" class=\"list-group-item list-group-item-action\" data-currency=\"" + currency.currency + "\">" + currency.full_name + " (" + currency.currency + ")</button>");
+                    });
+                } else {
+                    $("#currency-suggestions").hide();
+                }
+            },
+            error: function() {
+                $("#currency-suggestions").hide();
+            }
+        });
+    } else {
+        $("#currency-suggestions").hide();
+    }
+    $("#conversion-rate").val("");  // Clear rate if the user changes currency input
+    $("#conversion-rate-group").hide();  // Hide the conversion rate input box initially
+    $("#add-currency-form button[type=\"submit\"]").prop("disabled", true);  // Disable submit button
+});
 
-                                // Fetch exchange rate and prefill
-                                $.ajax({
-                                    url: "' . esc_url(admin_url('admin-ajax.php')) . '",
-                                    method: "POST",
-                                    data: {
-                                        action: "gem_get_exchange_rate",  // Ensure this action is also properly handled in PHP
-                                        currency: selectedCurrency
-                                    },
-                                    success: function(response) {
-                                        if (response.success) {
-                                            $("#conversion-rate").val(parseFloat(response.data).toFixed(6)); // Updated to 6 decimal places
-                                        } else {
-                                            $("#conversion-rate").val("");
-                                        }
-                                    },
-                                    error: function() {
-                                        $("#conversion-rate").val("");
-                                    }
-                                });
-                            });
+// Handle currency selection from suggestions
+$(document).on("click", ".list-group-item", function() {
+    var selectedCurrency = $(this).data("currency");
+    var localCurrency = "' . esc_js($group_details["local_currency"]) . '";  // Assuming local currency is displayed in #currency-display
+    
+    // Debugging log
+    console.log("Selected Currency: " + selectedCurrency + ", Local Currency: " + localCurrency);
+
+    $("#currency-name").val(selectedCurrency);
+    $("#currency-display").text(selectedCurrency);
+    $("#currency-suggestions").hide();
+    
+    // Show loading spinner when fetching exchange rate
+    $(".modal-footer .spinner-border").removeClass("d-none");
+    $("#conversion-rate-group").hide();  // Hide the conversion rate input box initially
+
+    // Fetch exchange rate and prefill
+    $.ajax({
+        url: "' . esc_url(admin_url('admin-ajax.php')) . '",
+        method: "POST",
+        data: {
+            action: "gem_get_exchange_rate",
+            currency: selectedCurrency,
+            to_currency: localCurrency  // Pass the local currency dynamically
+        },
+        success: function(response) {
+            // Hide loading spinner once data is fetched
+            $(".modal-footer .spinner-border").addClass("d-none");
+
+            if (response.success) {
+                // Fix the conversion logic, show 1 selected currency = x local currency
+                var rate = parseFloat(response.data);
+                
+                // Debugging log
+                console.log("Exchange rate fetched: " + rate);
+
+                $("#conversion-rate").val(rate.toFixed(6));  // Pre-fill conversion rate
+                $("#conversion-rate-group").show();  // Show the conversion rate input box
+                $("#add-currency-form button[type=\"submit\"]").prop("disabled", false);  // Enable submit button
+            } else {
+                $("#conversion-rate").val("");
+                $("#add-currency-form button[type=\"submit\"]").prop("disabled", true);  // Disable submit button
+            }
+        },
+        error: function() {
+            $(".modal-footer .spinner-border").addClass("d-none");
+            $("#conversion-rate").val("");
+            $("#add-currency-form button[type=\"submit\"]").prop("disabled", true);  // Disable submit button
+        }
+    });
+});
+
+// Disable submit if the conversion rate is not valid
+$("#conversion-rate").on("input", function() {
+    var rate = parseFloat($(this).val());
+    // Ensure no unintended rounding issue occurs with fixed decimals
+    if (isNaN(rate) || rate <= 0) {
+        $("#add-currency-form button[type=\"submit\"]").prop("disabled", true);
+    } else {
+        // Allow a valid rate to be submitted
+        $("#add-currency-form button[type=\"submit\"]").prop("disabled", false);
+    }
+});
 
                             $("#add-user-form").submit(function(e) {
                                 e.preventDefault();

@@ -30,8 +30,8 @@ from app.db_handler import (
 # Global cache for the number of entries
 entries_cache = LRUCache(maxsize=5000)
 
-def round_amount(amount):
-    return round(amount, 2) if amount % 1 else int(amount)
+def round_amount(amount, places=2):
+    return round(amount, places) if amount % 1 else int(amount)
 
 def get_number_of_entries(group_id: str) -> int:
     if group_id in entries_cache:
@@ -87,7 +87,7 @@ def add_currency(group_id: str, currency: str, conversion_rate: float, email: st
             logger.error(f"Adding currency failed: Group {group_id} not found.")
             return None
 
-        group["currency_conversion_rates"][currency] = round_amount(conversion_rate)
+        group["currency_conversion_rates"][currency] = round_amount(conversion_rate, 6)
 
         # Log the addition of a new currency
         log_entry = f"Currency {currency} was added by {email}"
