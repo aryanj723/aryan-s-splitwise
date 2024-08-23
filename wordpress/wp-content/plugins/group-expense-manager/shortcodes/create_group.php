@@ -30,6 +30,7 @@ function gem_create_group_shortcode() {
                                            <label for="local-currency">Local Currency:</label>
                                            <input type="text" id="local-currency" class="form-control" placeholder="Enter local currency" required maxlength="20">
                                            <div id="local-currency-error" class="text-danger"></div>
+                                           <div class="suggestion-box" style="display:none; background: #fff; border: 1px solid #ccc; z-index: 10; max-height: 150px; overflow-y: auto;"></div>
                                        </div>
                                    </div>
                                    <div id="members-container" class="form-row" style="max-height: 300px; overflow-y: auto;"></div> <!-- Scrollable area -->
@@ -251,6 +252,46 @@ function gem_create_group_shortcode() {
                            $input.val(email);
                            $input.siblings(".suggestion-box").hide();
                        });
+
+                       $(document).on("input", "#local-currency", function() {
+                            var search_term = $(this).val().trim().toUpperCase();
+                            var $input = $(this);
+
+                            if (search_term.length >= 1) {
+                                $.ajax({
+                                    url: "' . admin_url('admin-ajax.php') . '",
+                                    method: "POST",
+                                    data: {
+                                        action: "gem_search_currency",
+                                        search_term: search_term
+                                    },
+                                    success: function(response) {
+                                        if (response.success && response.data.length > 0) {
+                                            var suggestions = "";
+                                            $.each(response.data, function(index, currency) {
+                                                suggestions += "<button type=\'button\' class=\'btn btn-sm btn-info suggestion-item\' data-code=\'" + currency.currency + "\'>" + currency.currency + " - " + currency.full_name + " </button><br>";
+                                            });
+                                            $input.siblings(".suggestion-box").html(suggestions).show();
+                                        } else {
+                                            $input.siblings(".suggestion-box").html("<p>No results found</p>").show();
+                                        }
+                                    },
+                                    error: function() {
+                                        $input.siblings(".suggestion-box").html("<p>Error searching currencies</p>").show();
+                                    }
+                                });
+                            } else {
+                                $input.siblings(".suggestion-box").hide();
+                            }
+                        });
+
+                        // Handle currency suggestion click
+                        $(document).on("click", ".suggestion-item", function() {
+                            var currency_code = $(this).data("code");
+                            var $input = $("#local-currency");
+                            $input.val(currency_code);
+                            $input.siblings(".suggestion-box").hide();
+                        });
 
                        // Show modal when "Create Group" is clicked
                        $("#create-group-btn").click(function() {

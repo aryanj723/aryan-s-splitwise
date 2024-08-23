@@ -446,4 +446,252 @@ function gem_search_members() {
     wp_send_json_success($results);
 }
 
+// Handle currency search with AJAX
+add_action('wp_ajax_gem_search_currency', 'gem_search_currency');
+add_action('wp_ajax_nopriv_gem_search_currency', 'gem_search_currency');
+
+function gem_search_currency() {
+    $search_term = sanitize_text_field($_POST['search_term']);
+    
+    // Check if the search term is too short
+    if (strlen($search_term) < 1) {
+        wp_send_json_error('Search term is too short');
+    }
+
+    // Full mapping of currency codes to full names
+    $currency_names = [
+        'AED' => 'United Arab Emirates Dirham',
+        'AFN' => 'Afghan Afghani',
+        'ALL' => 'Albanian Lek',
+        'AMD' => 'Armenian Dram',
+        'ANG' => 'Netherlands Antillean Guilder',
+        'AOA' => 'Angolan Kwanza',
+        'ARS' => 'Argentine Peso',
+        'AUD' => 'Australian Dollar',
+        'AWG' => 'Aruban Florin',
+        'AZN' => 'Azerbaijani Manat',
+        'BAM' => 'Bosnia-Herzegovina Convertible Mark',
+        'BBD' => 'Barbadian Dollar',
+        'BDT' => 'Bangladeshi Taka',
+        'BGN' => 'Bulgarian Lev',
+        'BHD' => 'Bahraini Dinar',
+        'BIF' => 'Burundian Franc',
+        'BMD' => 'Bermudian Dollar',
+        'BND' => 'Brunei Dollar',
+        'BOB' => 'Bolivian Boliviano',
+        'BRL' => 'Brazilian Real',
+        'BSD' => 'Bahamian Dollar',
+        'BTC' => 'Bitcoin',
+        'BTN' => 'Bhutanese Ngultrum',
+        'BWP' => 'Botswana Pula',
+        'BYN' => 'Belarusian Ruble',
+        'BZD' => 'Belize Dollar',
+        'CAD' => 'Canadian Dollar',
+        'CDF' => 'Congolese Franc',
+        'CHF' => 'Swiss Franc',
+        'CLP' => 'Chilean Peso',
+        'CNY' => 'Chinese Yuan',
+        'COP' => 'Colombian Peso',
+        'CRC' => 'Costa Rican Colón',
+        'CUP' => 'Cuban Peso',
+        'CVE' => 'Cape Verdean Escudo',
+        'CZK' => 'Czech Koruna',
+        'DJF' => 'Djiboutian Franc',
+        'DKK' => 'Danish Krone',
+        'DOP' => 'Dominican Peso',
+        'DZD' => 'Algerian Dinar',
+        'EGP' => 'Egyptian Pound',
+        'ERN' => 'Eritrean Nakfa',
+        'ETB' => 'Ethiopian Birr',
+        'EUR' => 'Euro',
+        'FJD' => 'Fijian Dollar',
+        'FKP' => 'Falkland Islands Pound',
+        'FOK' => 'Faroese Króna',
+        'GBP' => 'British Pound Sterling',
+        'GEL' => 'Georgian Lari',
+        'GHS' => 'Ghanaian Cedi',
+        'GIP' => 'Gibraltar Pound',
+        'GMD' => 'Gambian Dalasi',
+        'GNF' => 'Guinean Franc',
+        'GTQ' => 'Guatemalan Quetzal',
+        'GYD' => 'Guyanese Dollar',
+        'HKD' => 'Hong Kong Dollar',
+        'HNL' => 'Honduran Lempira',
+        'HRK' => 'Croatian Kuna',
+        'HTG' => 'Haitian Gourde',
+        'HUF' => 'Hungarian Forint',
+        'IDR' => 'Indonesian Rupiah',
+        'ILS' => 'Israeli New Shekel',
+        'INR' => 'Indian Rupee',
+        'IQD' => 'Iraqi Dinar',
+        'IRR' => 'Iranian Rial',
+        'ISK' => 'Icelandic Króna',
+        'JMD' => 'Jamaican Dollar',
+        'JOD' => 'Jordanian Dinar',
+        'JPY' => 'Japanese Yen',
+        'KES' => 'Kenyan Shilling',
+        'KGS' => 'Kyrgyzstani Som',
+        'KHR' => 'Cambodian Riel',
+        'KMF' => 'Comorian Franc',
+        'KPW' => 'North Korean Won',
+        'KRW' => 'South Korean Won',
+        'KWD' => 'Kuwaiti Dinar',
+        'KYD' => 'Cayman Islands Dollar',
+        'KZT' => 'Kazakhstani Tenge',
+        'LAK' => 'Lao Kip',
+        'LBP' => 'Lebanese Pound',
+        'LKR' => 'Sri Lankan Rupee',
+        'LRD' => 'Liberian Dollar',
+        'LSL' => 'Lesotho Loti',
+        'LYD' => 'Libyan Dinar',
+        'MAD' => 'Moroccan Dirham',
+        'MDL' => 'Moldovan Leu',
+        'MGA' => 'Malagasy Ariary',
+        'MKD' => 'Macedonian Denar',
+        'MMK' => 'Burmese Kyat',
+        'MNT' => 'Mongolian Tögrög',
+        'MOP' => 'Macanese Pataca',
+        'MRU' => 'Mauritanian Ouguiya',
+        'MUR' => 'Mauritian Rupee',
+        'MVR' => 'Maldivian Rufiyaa',
+        'MWK' => 'Malawian Kwacha',
+        'MXN' => 'Mexican Peso',
+        'MYR' => 'Malaysian Ringgit',
+        'MZN' => 'Mozambican Metical',
+        'NAD' => 'Namibian Dollar',
+        'NGN' => 'Nigerian Naira',
+        'NIO' => 'Nicaraguan Córdoba',
+        'NOK' => 'Norwegian Krone',
+        'NPR' => 'Nepalese Rupee',
+        'NZD' => 'New Zealand Dollar',
+        'OMR' => 'Omani Rial',
+        'PAB' => 'Panamanian Balboa',
+        'PEN' => 'Peruvian Sol',
+        'PGK' => 'Papua New Guinean Kina',
+        'PHP' => 'Philippine Peso',
+        'PKR' => 'Pakistani Rupee',
+        'PLN' => 'Polish Złoty',
+        'PYG' => 'Paraguayan Guaraní',
+        'QAR' => 'Qatari Riyal',
+        'RON' => 'Romanian Leu',
+        'RSD' => 'Serbian Dinar',
+        'RUB' => 'Russian Ruble',
+        'RWF' => 'Rwandan Franc',
+        'SAR' => 'Saudi Riyal',
+        'SBD' => 'Solomon Islands Dollar',
+        'SCR' => 'Seychellois Rupee',
+        'SDG' => 'Sudanese Pound',
+        'SEK' => 'Swedish Krona',
+        'SGD' => 'Singapore Dollar',
+        'SHP' => 'Saint Helena Pound',
+        'SLL' => 'Sierra Leonean Leone',
+        'SOS' => 'Somali Shilling',
+        'SRD' => 'Surinamese Dollar',
+        'SSP' => 'South Sudanese Pound',
+        'STN' => 'São Tomé and Príncipe Dobra',
+        'SVC' => 'Salvadoran Colón',
+        'SYP' => 'Syrian Pound',
+        'SZL' => 'Eswatini Lilangeni',
+        'THB' => 'Thai Baht',
+        'TJS' => 'Tajikistani Somoni',
+        'TMT' => 'Turkmenistani Manat',
+        'TND' => 'Tunisian Dinar',
+        'TOP' => 'Tongan Paʻanga',
+        'TRY' => 'Turkish Lira',
+        'TTD' => 'Trinidad and Tobago Dollar',
+        'TWD' => 'New Taiwan Dollar',
+        'TZS' => 'Tanzanian Shilling',
+        'UAH' => 'Ukrainian Hryvnia',
+        'UGX' => 'Ugandan Shilling',
+        'USD' => 'United States Dollar',
+        'UYU' => 'Uruguayan Peso',
+        'UZS' => 'Uzbekistani Som',
+        'VES' => 'Venezuelan Bolívar Soberano',
+        'VND' => 'Vietnamese Đồng',
+        'VUV' => 'Vanuatu Vatu',
+        'WST' => 'Samoan Tala',
+        'XAF' => 'Central African CFA Franc',
+        'XCD' => 'East Caribbean Dollar',
+        'XOF' => 'West African CFA Franc',
+        'XPF' => 'CFP Franc',
+        'YER' => 'Yemeni Rial',
+        'ZAR' => 'South African Rand',
+        'ZMW' => 'Zambian Kwacha',
+        'ZWL' => 'Zimbabwean Dollar'
+    ];
+
+    // Get currency rates from the transient
+    $currencies = get_transient('gem_currency_list');
+
+    // If the transient doesn't exist, fetch from the API
+    if ($currencies === false) {
+        $response = wp_remote_get('https://openexchangerates.org/api/latest.json?app_id=b31680b69644433d8750d5ff5f2f06cb');
+        if (is_wp_error($response)) {
+            wp_send_json_error('Failed to retrieve currency data');
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (!isset($data['rates'])) {
+            wp_send_json_error('Invalid API response');
+        }
+
+        // Store rates in the transient for 24 hours
+        set_transient('gem_currency_list', $data['rates'], DAY_IN_SECONDS);
+        $currencies = $data['rates'];
+    }
+
+    $results = [];
+    foreach ($currencies as $code => $rate) {
+        $full_name = isset($currency_names[$code]) ? $currency_names[$code] : $code; // Use code if name is missing
+        
+        // Search for matching currency code or full name
+        if (stripos($code, $search_term) !== false || stripos($full_name, $search_term) !== false) {
+            $results[] = [
+                'currency' => $code,
+                'full_name' => $full_name
+            ];
+        }
+    }
+
+    wp_send_json_success($results);
+}
+
+
+
+function gem_get_exchange_rate($from_currency, $to_currency) {
+    // Fetch the cached rates or pull from API if necessary
+    $currencies = get_transient('gem_currency_list');
+    
+    // If the transient doesn't exist, fetch from the API
+    if ($currencies === false) {
+        $response = wp_remote_get('https://openexchangerates.org/api/latest.json?app_id=b31680b69644433d8750d5ff5f2f06cb');
+        if (is_wp_error($response)) {
+            return 'Failed to retrieve currency data';
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (!isset($data['rates'])) {
+            return 'Invalid API response';
+        }
+
+        // Store rates in the transient for 24 hours
+        set_transient('gem_currency_list', $data['rates'], DAY_IN_SECONDS);
+        $currencies = $data['rates'];
+    }
+
+    // Ensure both currencies exist
+    if (!isset($currencies[$from_currency]) || !isset($currencies[$to_currency])) {
+        return 'Invalid currency codes';
+    }
+
+    // Calculate the conversion rate
+    $rate = $currencies[$to_currency] / $currencies[$from_currency];
+    
+    return round($rate, 6);  // Return exchange rate with up to 6 decimal places
+}
+
 ?>
