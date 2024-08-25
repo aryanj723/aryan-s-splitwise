@@ -192,7 +192,7 @@ function gem_group_details_shortcode() {
                     
                     <div class="form-group">
                         <label for="entry-paid-by">Paid By:</label>
-                        <select id="entry-paid-by" class="form-control" style="padding: 8px; line-height: 1.5;">';  // Adjust padding and line-height
+                        <select id="entry-paid-by" class="form-control" style="padding: 8px; line-height: 1.5;">';
 foreach ($group_details['members'] as $member) {
     $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
     $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
@@ -203,7 +203,7 @@ $output .= '</select>
                     
                     <div class="form-group">
                         <label for="entry-currency">Currency:</label>
-                        <select id="entry-currency" class="form-control" style="padding: 8px; line-height: 1.5;">';  // Adjust padding and line-height
+                        <select id="entry-currency" class="form-control" style="padding: 8px; line-height: 1.5;">';
 foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
     $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
 }
@@ -215,10 +215,10 @@ $output .= '</select>
                         <label for="entry-shares">Shares:</label>';
 foreach ($group_details['members'] as $member) {
     $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
-    $output .= '<div class="form-check mb-2">
-                    <input type="checkbox" class="form-check-input user-checkbox" data-user-id="' . htmlspecialchars($member) . '" id="checkbox-' . htmlspecialchars($member) . '">
-                    <label class="form-check-label" for="checkbox-' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</label>
-                    <input type="number" class="form-control form-control-sm share-input d-inline-block" style="width: 50%;" name="share-' . htmlspecialchars($member) . '" placeholder="Share" min="0" step="0.01" disabled>
+    $output .= '<div class="form-check mb-2 user-row" data-user-id="' . htmlspecialchars($member) . '">
+                    <input type="checkbox" class="form-check-input user-checkbox bigger-checkbox" data-user-id="' . htmlspecialchars($member) . '" id="checkbox-' . htmlspecialchars($member) . '">
+                    <label class="form-check-label user-name" for="checkbox-' . htmlspecialchars($member) . '" style="margin-left: 10px;">' . htmlspecialchars($display_name) . '</label>
+                    <input type="number" class="form-control form-control-sm share-input d-inline-block" style="width: 100px; margin-left: 10px;" name="share-' . htmlspecialchars($member) . '" placeholder="Share" min="0" step="0.01" disabled>
                 </div>';
 }
 
@@ -361,7 +361,7 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                     </div>
                     
                     <div class="form-group" id="conversion-rate-group" style="display: none;">
-                        <label for="conversion-rate-display">Conversion Rate:</label>
+                        <label for="conversion-rate-display">Exchange Rate: (as of today)</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">1&nbsp;<span id="currency-display">[Currency]</span> =</span>
@@ -481,6 +481,27 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
 
         $output .= '<script>
                         jQuery(document).ready(function($) {
+                            // Pre-fill the "Paid By" field with the current logged-in user email when the modal is opened
+                            $("#add-entry-modal").on("show.bs.modal", function() {
+                                var userEmail = "' . esc_js($email) . '"; // Current logged-in user email
+                                $("#entry-paid-by").val(userEmail); 
+                            });
+
+                            // Handle row click for checkbox toggle (except for the input field)
+                            $(document).on("click", ".user-row", function(e) {
+                                // Avoid toggling the checkbox when interacting with the share input box
+                                if (!$(e.target).is(".share-input") && !$(e.target).is(".user-checkbox")) {
+                                    var checkbox = $(this).find(".user-checkbox");
+                                    checkbox.prop("checked", !checkbox.prop("checked")).trigger("change");
+                                }
+                            });
+
+                            // Ensure checkbox toggle works independently when directly clicked
+                            $(document).on("click", ".user-checkbox", function(e) {
+                                e.stopPropagation(); // Prevent the row click event from being triggered
+                            });
+
+                            // Add Entry Form Submission
                             $("#add-entry-form").on("submit", function(event) {
                                 event.preventDefault();
 
@@ -770,6 +791,12 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                                 var search_term = $(this).val().trim().toUpperCase();
                                 
                                 if (search_term.length > 0) {
+                                    // Show the conversion rate field with pre-filled value of 1 for custom currency
+                                    $("#currency-display").text(search_term); // Dynamically populate the currency display
+                                    $("#conversion-rate").val(1); // Pre-fill with 1 for custom currency
+                                    $("#conversion-rate-group").fadeIn();  // Show conversion rate input field
+                                    $("#add-currency-form button[type=\"submit\"]").prop("disabled", false);  // Enable submit button
+
                                     $.ajax({
                                         url: "' . esc_url(admin_url('admin-ajax.php')) . '",
                                         method: "POST",
@@ -793,10 +820,10 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                                     });
                                 } else {
                                     $("#currency-suggestions").hide();
+                                    $("#conversion-rate-group").fadeOut();  // Hide conversion rate if no input
+                                    $("#add-currency-form button[type=\"submit\"]").prop("disabled", true);  // Disable submit button
                                 }
                                 $("#conversion-rate").val("");  // Clear rate if the user changes currency input
-                                $("#conversion-rate-group").hide();  // Hide the conversion rate input box initially
-                                $("#add-currency-form button[type=\"submit\"]").prop("disabled", true);  // Disable submit button
                             });
 
                             // Handle currency selection from suggestions
@@ -808,12 +835,14 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                                 console.log("Selected Currency: " + selectedCurrency + ", Local Currency: " + localCurrency);
 
                                 $("#currency-name").val(selectedCurrency);
-                                $("#currency-display").text(" " + selectedCurrency); // Added space before currency
+                                $("#currency-display").text(" " + selectedCurrency); // Added non-breaking space before currency
                                 $("#currency-suggestions").hide();
-                                
-                                // Show loading spinner when fetching exchange rate
-                                $(".modal-footer .spinner-border").removeClass("d-none");
-                                $("#conversion-rate-group").hide();  // Hide the conversion rate input box initially
+
+                                // Show "Fetching forex rate..." in the conversion rate input field for better UX
+                                var $conversionRateInput = $("#conversion-rate");
+                                $conversionRateInput.prop("disabled", true);  // Disable conversion rate input during loading
+                                $conversionRateInput.val("Fetching forex rate...");  // Show fetching text in the input field
+                                $(".modal-footer .spinner-border").addClass("d-none");  // Hide footer spinner
 
                                 // Fetch exchange rate and prefill
                                 $.ajax({
@@ -825,9 +854,6 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                                         to_currency: localCurrency  // Pass the local currency dynamically
                                     },
                                     success: function(response) {
-                                        // Hide loading spinner once data is fetched
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-
                                         if (response.success) {
                                             // Fix the conversion logic, show 1 selected currency = x local currency
                                             var rate = parseFloat(response.data);
@@ -835,17 +861,19 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                                             // Debugging log
                                             console.log("Exchange rate fetched: " + rate);
 
-                                            $("#conversion-rate").val(rate.toFixed(6));  // Pre-fill conversion rate
+                                            $conversionRateInput.val(rate.toFixed(6));  // Pre-fill conversion rate
+                                            $conversionRateInput.prop("disabled", false);  // Re-enable input
                                             $("#conversion-rate-group").show();  // Show the conversion rate input box
                                             $("#add-currency-form button[type=\"submit\"]").prop("disabled", false);  // Enable submit button
                                         } else {
-                                            $("#conversion-rate").val("");
+                                            $conversionRateInput.val("");  // Clear input field
+                                            $conversionRateInput.prop("disabled", false);  // Re-enable input
                                             $("#add-currency-form button[type=\"submit\"]").prop("disabled", true);  // Disable submit button
                                         }
                                     },
                                     error: function() {
-                                        $(".modal-footer .spinner-border").addClass("d-none");
-                                        $("#conversion-rate").val("");
+                                        $conversionRateInput.val("");  // Clear input field
+                                        $conversionRateInput.prop("disabled", false);  // Re-enable input
                                         $("#add-currency-form button[type=\"submit\"]").prop("disabled", true);  // Disable submit button
                                     }
                                 });

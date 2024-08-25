@@ -157,16 +157,42 @@ li {
 }
 
 .share-input {
-    width: 25%;
-    margin-left: auto;
+    width: 80px;
+    margin-left: 10px; /* Smaller gap between the share input and name */
 }
 
-.user-checkbox {
-    margin-right: 10px;
+/* Larger, more stylish checkboxes */
+.bigger-checkbox {
+    width: 20px;
+    height: 20px;
+    transform: scale(1.5);
 }
 
-.user-name {
-    width: 60%;
+/* Clickable rows for user shares */
+.user-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.user-row:hover {
+    background-color: #f0f8ff; /* Light blue hover effect */
+}
+
+/* Adjustments for long member names */
+.user-row .form-check-label {
+    margin-left: 10px; /* Add some space between the checkbox and the label */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 1rem;
+}
+
+.user-row .form-check-label.long-name {
+    font-size: 0.9rem; /* Reduce font size for long names */
 }
 
 /* Inactive user styling */
@@ -239,6 +265,20 @@ li {
 
     .form-control {
         padding: 8px;
+    }
+
+    /* For mobile, reduce checkbox and input sizes */
+    .bigger-checkbox {
+        width: 18px;
+        height: 18px;
+    }
+
+    .user-row .form-check-label {
+        font-size: 0.9rem;
+    }
+
+    .user-row .share-input {
+        width: 70px;
     }
 }
 
