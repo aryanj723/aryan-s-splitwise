@@ -204,6 +204,11 @@ $output .= '</select>
                     <div class="form-group">
                         <label for="entry-currency">Currency:</label>
                         <select id="entry-currency" class="form-control" style="padding: 8px; line-height: 1.5;">';
+
+// Always include the local currency as an option
+$output .= '<option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
+
+// Iterate over other currencies and add them to the dropdown
 foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
     $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
 }
@@ -235,6 +240,8 @@ $output .= '</div>
         </div>
     </div>
 </div>';
+
+
 
 
 $output .= '<div class="modal fade" id="settle-modal" tabindex="-1" role="dialog">
