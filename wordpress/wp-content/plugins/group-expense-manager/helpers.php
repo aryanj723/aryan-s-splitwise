@@ -39,7 +39,7 @@ function gem_display_expenses($entries, $members) {
     });
 
     $logged_in_user_email = wp_get_current_user()->user_email;
-    $output = '<table class="table">';
+    $output = '<table class="table table-striped table-responsive" class="table">';
     $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Paid By</th><th>Shares</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
     
     foreach ($entries as $entry) {
@@ -101,7 +101,7 @@ function gem_display_payments($entries, $members) {
     });
 
     $logged_in_user_email = wp_get_current_user()->user_email;
-    $output = '<table class="table">';
+    $output = '<table class="table table-striped table-responsive" class="table">';
     $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
     
     foreach ($entries as $entry) {

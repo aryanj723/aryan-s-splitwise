@@ -2,8 +2,12 @@
 
 body {
     font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
 }
 
+/* Headings */
 h2 {
     font-weight: bold;
     font-size: 2em;
@@ -13,8 +17,10 @@ h2 {
 
 p {
     font-size: 1.2em;
+    margin-bottom: 10px;
 }
 
+/* List styles */
 ul {
     list-style-type: none;
     padding: 0;
@@ -22,9 +28,10 @@ ul {
 
 li {
     font-size: 1em;
-    margin: 10px 20px; /* Add left margin to indent */
+    margin: 10px 20px;
 }
 
+/* Table styling */
 .table {
     width: 100%;
     margin: 20px 0;
@@ -50,9 +57,14 @@ li {
     background-color: #f1f1f1;
 }
 
+/* Button styles */
 .btn-primary {
     background-color: #007bff;
     border-color: #007bff;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 .btn-primary:hover {
@@ -60,8 +72,22 @@ li {
     border-color: #0056b3;
 }
 
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Modal content styling */
 .modal-content {
     font-size: 1em;
+    padding: 20px;
+    max-height: 80vh; /* Limit modal height to 80% of the viewport */
+    overflow-y: auto; /* Allow scrolling for longer content */
 }
 
 .modal-title {
@@ -71,20 +97,16 @@ li {
 
 .form-control {
     margin-bottom: 15px;
+    padding: 10px;
+    font-size: 16px;
 }
 
-/* Layout and section styling */
-.creator, .members, .balances {
-    font-weight: bold;
-    display: block;
-    margin-top: 20px;
-    margin-bottom: 10px;
-}
-
+/* Layout adjustments */
 .container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center; /* Center the entire container */
+    justify-content: center;
+    padding: 20px;
 }
 
 .full-width-box {
@@ -95,11 +117,13 @@ li {
     margin-top: 20px;
 }
 
+/* Cancelled item styling */
 .cancelled {
     text-decoration: line-through;
     color: gray;
 }
 
+/* Button container and group list */
 .button-container {
     display: flex;
     justify-content: center;
@@ -110,20 +134,22 @@ li {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    justify-content: space-between; /* Add space between the buttons */
+    justify-content: space-between;
 }
 
 .group-button {
-    width: calc(33.33% - 20px); /* Adjust the percentage as needed */
+    width: calc(33.33% - 20px);
     margin-bottom: 20px;
     font-size: 18px;
-    padding: 15px 20px; /* Increase padding to make buttons larger */
+    padding: 15px 20px;
 }
 
 .group-button:hover {
     background-color: #0056b3;
+    color: white;
 }
 
+/* User share input styles */
 .user-share {
     margin-bottom: 10px;
     display: flex;
@@ -143,30 +169,29 @@ li {
     width: 60%;
 }
 
-/* Ensure that unchecked users are visually marked */
-.user-checkbox:not(:checked) + .user-name, 
+/* Inactive user styling */
+.user-checkbox:not(:checked) + .user-name,
 .user-checkbox:not(:checked) + .user-name + .share-input {
     opacity: 0.5;
     pointer-events: none;
 }
 
-/* Custom styles for group cards */
+/* Group card styling */
 .card {
-    width: 250px; /* Set a fixed width for the card */
-    height: 300px; /* Set a fixed height for the card */
-    margin: 10px auto; /* Add margin around the cards */
+    width: 100%;
+    max-width: 250px;
+    margin: 10px auto;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    align-items: center; /* Center content within the card */
-    text-align: center; /* Center the text */
+    align-items: center;
+    text-align: center;
     padding: 15px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow for better visibility */
-    border-radius: 10px; /* Rounded corners */
-    background-color: #ffffff; /* Set background color for the card */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    background-color: #ffffff;
 }
 
-/* Ensure the button within the card is responsive and centered */
 .card-title button {
     width: 100%;
     margin-bottom: 10px;
@@ -175,100 +200,91 @@ li {
     border-radius: 5px;
 }
 
-/* Make the created date smaller and less prominent */
 .card-text {
     font-size: 0.8em;
     color: #666;
 }
 
-/* Styling for the balance info */
 .balance-info {
     font-size: 1em;
     font-weight: bold;
 }
 
-/* Styling the exit button (delete button) */
+/* Delete button styling */
 .delete-btn {
     width: 50px;
     height: 40px;
     margin: 0 auto;
 }
 
-/* Flex layout for the container */
-.container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 20px;
-}
-
-/* Small adjustments for mobile responsiveness */
+/* Responsive layout adjustments */
 @media (max-width: 768px) {
-    .card {
+    .group-button, .card {
         width: 100%;
+    }
+
+    .table th, .table td {
+        padding: 8px;
+    }
+
+    .btn-primary, .btn-danger {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    .modal-content {
+        padding: 15px;
+        max-height: 70vh; /* Reduce height to 70% on smaller devices */
+    }
+
+    .form-control {
+        padding: 8px;
     }
 }
 
-/* Custom styles for Group Expense Manager */
-
-/* Ensure the group-name button doesn't change color on hover */
-.group-name-btn {
-    background-color: #007bff; /* Your default button color */
-    color: white; /* Ensures the text is white */
-    border: none;
-    transition: background-color 0.3s ease; /* Smooth transition for hover */
+/* Fix for suggestion box visibility and z-index */
+.suggestion-box {
+    z-index: 1050; /* Ensure suggestion box stays above modal content */
+    max-height: 200px; /* Prevent suggestion box overflow */
+    overflow-y: auto; /* Allow scrolling in suggestion box */
+    background-color: white; /* Ensure the suggestion box is visible */
+    position: absolute; /* Ensure it's positioned correctly near the input */
+    width: 100%; /* Match the width of the input field */
+    border: 1px solid #ddd; /* Add a border for better visibility */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow for visibility */
 }
 
-.group-name-btn:hover {
-    background-color: white; /* Slightly darker shade on hover */
-    color: white; /* Keep text white on hover */
+/* Ensure the input fields are positioned correctly */
+.form-control {
+    position: relative;
 }
 
-/* For buttons with additional functionality (e.g., delete buttons) */
-.btn-danger.delete-btn:hover {
-    background-color: #dc3545;
-    color: white;
-}
-
-/* New CSS for preventing overflow and managing modal behavior */
-
-/* Fix for modal to avoid any overflow issues */
-#create-group-modal .modal-dialog {
-    max-width: 600px;
-    margin: 1.75rem auto;
-}
-
-/* Ensure no button overflow */
-.create-group-container {
-    text-align: center;
-    margin: 20px 0;
-}
-
-#add-member-btn,
-#create-group-btn {
-    position: relative; /* Prevent duplication issues */
-    margin-bottom: 0;
-    z-index: 1; /* Ensure main buttons stay on top */
-}
-
+/* Modal positioning fix */
 .modal {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    overflow: visible;
 }
 
-/* Properly position suggestion boxes to avoid overflow issues */
-.suggestion-box {
-    z-index: 1050; /* Ensure suggestion box stays above modal content */
-    max-height: 200px; /* Prevent suggestion box overflow */
-    overflow-y: auto; /* Allow scrolling in suggestion box */
-}
-
-/* Modal positioning fix */
 .modal.show {
     display: block !important;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    overflow: visible;
+}
+
+/* Custom button styles */
+.group-name-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.group-name-btn:hover {
+    background-color: white;
+    color: #007bff;
 }

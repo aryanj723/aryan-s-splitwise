@@ -56,7 +56,7 @@ function gem_group_details_shortcode() {
 
         $group_name = sanitize_text_field($_GET['group_name']);
 
-        $output .= '<table class="table">';
+        $output .= '<table class="table table-striped table-responsive" class="table">';
         $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances in ' . htmlspecialchars($group_details['local_currency']) . ' (simplified)</th></tr></thead>';
         $output .= '<tbody><tr>';
 
@@ -129,7 +129,7 @@ function gem_group_details_shortcode() {
         // Logs Section
         $output .= '<div id="group-logs">';
         $output .= '<h4>Logs</h4>';
-        $output .= '<table class="table">';
+        $output .= '<table class="table table-striped table-responsive" class="table">';
         $output .= '<tbody>';
         foreach ($group_details['logs'] as $log) {
             // Break the log into words by spaces
@@ -164,8 +164,8 @@ function gem_group_details_shortcode() {
 
         // Modals for Add Expense, Record Payment, Add Currency, Add User, and Remove Expense
         $output .= '<div class="modal fade" id="add-entry-modal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
             <div class="modal-header">
                 <h5 class="modal-title">Add Expense</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -176,7 +176,7 @@ function gem_group_details_shortcode() {
                 <form id="add-entry-form" class="needs-validation" novalidate>
                     <div class="form-group">
                         <label for="entry-description">Description:</label>
-                        <input type="text" id="entry-description" class="form-control form-control-sm" required maxlength="20" placeholder="Enter description">
+                        <input type="text" id="entry-description" class="form-control" required maxlength="20" placeholder="Enter description">
                         <div class="invalid-feedback">
                             Please enter a description.
                         </div>
@@ -184,7 +184,7 @@ function gem_group_details_shortcode() {
                     
                     <div class="form-group">
                         <label for="entry-amount">Amount:</label>
-                        <input type="number" id="entry-amount" class="form-control form-control-sm" required min="1" step="0.01" placeholder="Enter amount">
+                        <input type="number" id="entry-amount" class="form-control" required min="1" step="0.01" placeholder="Enter amount">
                         <div class="invalid-feedback">
                             Please enter a valid amount.
                         </div>
@@ -192,7 +192,7 @@ function gem_group_details_shortcode() {
                     
                     <div class="form-group">
                         <label for="entry-paid-by">Paid By:</label>
-                        <select id="entry-paid-by" class="form-control form-control-sm">';
+                        <select id="entry-paid-by" class="form-control" style="padding: 8px; line-height: 1.5;">';  // Adjust padding and line-height
 foreach ($group_details['members'] as $member) {
     $display_name = ($member == $email) ? 'You' : (get_user_by('email', $member) ? get_user_display_name($member, $group_details['members']) : $member);
     $output .= '<option value="' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</option>';
@@ -203,8 +203,7 @@ $output .= '</select>
                     
                     <div class="form-group">
                         <label for="entry-currency">Currency:</label>
-                        <select id="entry-currency" class="form-control form-control-sm">
-                            <option value="' . htmlspecialchars($group_details['local_currency']) . '">' . htmlspecialchars($group_details['local_currency']) . '</option>';
+                        <select id="entry-currency" class="form-control" style="padding: 8px; line-height: 1.5;">';  // Adjust padding and line-height
 foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
     $output .= '<option value="' . htmlspecialchars($currency) . '">' . htmlspecialchars($currency) . '</option>';
 }
@@ -219,7 +218,7 @@ foreach ($group_details['members'] as $member) {
     $output .= '<div class="form-check mb-2">
                     <input type="checkbox" class="form-check-input user-checkbox" data-user-id="' . htmlspecialchars($member) . '" id="checkbox-' . htmlspecialchars($member) . '">
                     <label class="form-check-label" for="checkbox-' . htmlspecialchars($member) . '">' . htmlspecialchars($display_name) . '</label>
-                    <input type="number" class="form-control form-control-sm share-input d-inline-block" style="width: 25%;" name="share-' . htmlspecialchars($member) . '" placeholder="Share" min="0" step="0.01" disabled>
+                    <input type="number" class="form-control form-control-sm share-input d-inline-block" style="width: 50%;" name="share-' . htmlspecialchars($member) . '" placeholder="Share" min="0" step="0.01" disabled>
                 </div>';
 }
 
