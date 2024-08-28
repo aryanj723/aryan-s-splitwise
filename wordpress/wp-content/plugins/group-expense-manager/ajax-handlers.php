@@ -115,7 +115,6 @@ function gem_add_expense() {
             'Content-Type' => 'application/json',
         ),
     ));
-    delete_transient($group_name);
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
         error_log("Error adding expense: $error_message");
@@ -125,6 +124,7 @@ function gem_add_expense() {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         if ($status_code == 200) {
+            delete_transient($group_name);
             wp_send_json_success('Expense added successfully.');
         } elseif (isset($data['message'])) { 
             wp_send_json_error($data['message']);
@@ -173,7 +173,6 @@ function gem_add_payment() {
             'Content-Type' => 'application/json',
         ),
     ));
-    delete_transient($group_name);
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
         wp_send_json_error("Something went wrong: $error_message");
@@ -182,6 +181,7 @@ function gem_add_payment() {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         if ($status_code == 200) {
+            delete_transient($group_name);
             wp_send_json_success('Payment recorded successfully.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
@@ -225,7 +225,6 @@ function gem_add_user() {
             'Content-Type' => 'application/json',
         ),
     ));
-    delete_transient($group_name);
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
         wp_send_json_error("Something went wrong: $error_message");
@@ -234,6 +233,7 @@ function gem_add_user() {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         if ($status_code == 200) {
+            delete_transient($group_name);
             wp_send_json_success('User added successfully.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
@@ -279,7 +279,6 @@ function gem_add_currency() {
             'Content-Type' => 'application/json',
         ),
     ));
-    delete_transient($group_name);
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
         wp_send_json_error("Something went wrong: $error_message");
@@ -288,6 +287,7 @@ function gem_add_currency() {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         if ($status_code == 200) {
+            delete_transient($group_name);
             wp_send_json_success('Currency added successfully.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
@@ -314,7 +314,6 @@ function gem_delete_group() {
             'Content-Type' => 'application/json',
         ),
     ));
-    delete_transient($group_name);
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
         wp_send_json_error("Something went wrong: $error_message");
@@ -324,6 +323,7 @@ function gem_delete_group() {
         $data = json_decode($body, true);
 
         if ($response_code === 200) {
+            delete_transient($group_name);
             wp_send_json_success('Success');
         } elseif ($response_code === 400) {
             // Handle specific error for pending balances
@@ -367,7 +367,6 @@ function gem_remove_expense() {
             'Content-Type' => 'application/json',
         ),
     ));
-    delete_transient($group_name);
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
         wp_send_json_error("Something went wrong: $error_message");
@@ -377,6 +376,7 @@ function gem_remove_expense() {
         $data = json_decode($body, true);
 
         if ($status_code == 200) {
+            delete_transient($group_name);
             wp_send_json_success('Expense removed successfully.');
         } elseif (isset($data['message'])) { // Check if the "message" key exists
             wp_send_json_error($data['message']);
