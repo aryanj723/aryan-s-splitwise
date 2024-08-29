@@ -138,7 +138,7 @@ function gem_my_groups_shortcode() {
         $output .= '},';
         $output .= 'success: function(response) {';
         $output .= 'alert(response.data);';
-        $output .= 'window.location.reload();'; // Reload the page after successful deletion
+        $output .= 'window.location.reload(true);'; // Reload the page after successful deletion
         $output .= '},';
         $output .= 'error: function(xhr, status, error) {';
         $output .= 'alert("Error deleting group: " + error);';

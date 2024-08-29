@@ -187,7 +187,7 @@ function gem_create_group_shortcode() {
                                        alert("Group created successfully!");
 
                                        setTimeout(function() {
-                                           location.reload();
+                                           location.reload(true);
                                        }, 500);
                                    } else {
                                        alert("Error: " + response.data);

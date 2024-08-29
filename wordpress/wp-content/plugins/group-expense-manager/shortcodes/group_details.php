@@ -588,7 +588,7 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
 
                                             // After modal is closed, show the success message
                                             alert("Expense added successfully!");
-                                            location.reload();
+                                            location.reload(true);
                                         } else {
                                             alert("Failed to add expense: " + response.data);
                                         }
@@ -659,7 +659,7 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
 
                                             // After modal is closed, show the success message
                                             alert("Payment recorded successfully!");
-                                            location.reload();
+                                            location.reload(true);
                                         } else {
                                             alert("Failed to record payment: " + response.data);
                                         }
@@ -776,7 +776,7 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
 
                                             // After modal is closed, show the success message
                                             alert("Currency added successfully!");
-                                            location.reload();
+                                            location.reload(true);
                                         } else {
                                             alert("Failed to add currency: " + response.data);
                                         }
@@ -938,7 +938,7 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                                         $("#add-user-modal").modal("hide");
                                         $("#response-message").html(response.data);
                                         setTimeout(function() {
-                                            location.reload();
+                                            location.reload(true);
                                         }, 2000);
                                     },
                                     error: function(error) {
@@ -1021,7 +1021,7 @@ $output .= '<div class="modal fade" id="add-currency-modal" tabindex="-1" role="
                                         $("#remove-expense-modal").modal("hide");
                                         $("#response-message").html(response.data);
                                         setTimeout(function() {
-                                            location.reload();
+                                            location.reload(true);
                                         }, 2000);
                                     },
                                     error: function(error) {
