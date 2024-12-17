@@ -45,7 +45,7 @@ function gem_create_group() {
         return;
     }
 
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/create', array(
+    $response = wp_remote_post(GEM_API_BASE_URL . '/groups/create', array(
         'method'    => 'POST',
         'body'      => json_encode(array(
             'name' => $group_name,
@@ -98,7 +98,7 @@ function gem_add_expense() {
         wp_send_json_error('Please provide all required fields.');
         return;
     }
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/add_expense', array(
+    $response = wp_remote_post(GEM_API_BASE_URL . '/groups/add_expense', array(
         'method'    => 'POST',
         'body'      => json_encode(array(
             'name' => $group_name,
@@ -156,7 +156,7 @@ function gem_add_payment() {
         wp_send_json_error('Please provide all required fields.');
         return;
     }
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/add_payment', array(
+    $response = wp_remote_post(GEM_API_BASE_URL . '/groups/add_payment', array(
         'method'    => 'POST',
         'body'      => json_encode(array(
             'name' => $group_name,
@@ -214,7 +214,7 @@ function gem_add_user() {
         wp_send_json_error('Invalid email address: ' . $new_member_email . ' (should be a valid email and less than 70 characters).');
         return;
     }
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/add_user', array(
+    $response = wp_remote_post(GEM_API_BASE_URL . '/groups/add_user', array(
         'method'    => 'POST',
         'body'      => json_encode(array(
             'group_name' => $group_name,
@@ -267,7 +267,7 @@ function gem_add_currency() {
         wp_send_json_error('Currency should be less than 15 characters.');
         return;
     }
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/add_currency', array(
+    $response = wp_remote_post(GEM_API_BASE_URL . '/groups/add_currency', array(
         'method'    => 'POST',
         'body'      => json_encode(array(
             'group_name' => $group_name,
@@ -307,7 +307,7 @@ function gem_delete_group() {
         wp_send_json_error('Please provide all required fields.');
         return;
     }
-    $response = wp_remote_request('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/delete', array(
+    $response = wp_remote_request(GEM_API_BASE_URL . '/groups/delete', array(
         'method'    => 'DELETE',
         'body'      => json_encode(array('name' => $group_name, 'email' => $email)),
         'headers'   => array(
@@ -360,7 +360,7 @@ function gem_remove_expense() {
         'member_email' => $email,
         'expense_datetime' => $expense_datetime
     );
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/remove_expense', array(
+    $response = wp_remote_post(GEM_API_BASE_URL . '/groups/remove_expense', array(
         'method'    => 'POST',
         'body'      => json_encode($payload),
         'headers'   => array(

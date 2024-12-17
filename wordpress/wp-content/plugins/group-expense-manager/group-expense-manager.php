@@ -2,9 +2,11 @@
 /*
 Plugin Name: Group Expense Manager
 Description: Manages groups and expenses, integrates a backend server
-Version: 3.8
+Version: 3.9
 Author: Aryan
 */
+
+define('GEM_API_BASE_URL', 'https://aryan-s-splitwise-fastapi-latest.onrender.com');
 
 // Include other files
 include_once 'shortcodes/shortcodes.php';

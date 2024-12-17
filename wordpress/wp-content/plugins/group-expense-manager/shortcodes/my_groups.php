@@ -9,7 +9,7 @@ function gem_my_groups_shortcode() {
     $user = wp_get_current_user();
     $email = $user->user_email;
 
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_groups', array(
+    $response = wp_remote_post(GEM_API_BASE_URL . '/groups/get_groups', array(
         'method'    => 'POST',
         'body'      => json_encode(array('email' => $email)),
         'headers'   => array(
@@ -164,7 +164,7 @@ $group_details = get_transient($group_name_raw);
 // If transient is empty, fetch from the API
 if ($group_details === false) {
     // Make the API request to get group details
-    $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_group_details', array(
+    $response = wp_remote_post(GEM_API_BASE_URL . '/groups/get_group_details', array(
         'method'    => 'POST',
         'body'      => json_encode(array('name' => $group_name_raw, 'email' => $email)), // Use the raw group name here
         'headers'   => array(

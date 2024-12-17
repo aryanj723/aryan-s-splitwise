@@ -18,7 +18,7 @@ function gem_group_details_shortcode() {
 
     if ($group_details === false) {
         // If not found in the transient, proceed with the API call
-        $response = wp_remote_post('https://pelagic-rig-428909-d0.lm.r.appspot.com/groups/get_group_details', array(
+        $response = wp_remote_post(GEM_API_BASE_URL . '/groups/get_group_details', array(
             'method'    => 'POST',
             'body'      => json_encode(array('name' => $group_name_raw, 'email' => $email)),
             'headers'   => array(
