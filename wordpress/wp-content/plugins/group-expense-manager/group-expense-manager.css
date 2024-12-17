@@ -82,6 +82,27 @@ li {
     border-color: #bd2130;
 }
 
+/* Button container styling */
+.button-container {
+    display: flex; /* Use Flexbox layout */
+    flex-wrap: wrap; /* Wrap buttons to the next line */
+    justify-content: center; /* Center align buttons horizontally */
+    gap: 20px; /* Space between buttons */
+    margin: 20px auto; /* Add spacing above and below, center the container */
+    max-width: 600px; /* Limit the width of the button container */
+    padding: 10px;
+}
+
+/* Button styles in the container */
+.button-container button {
+    flex: 0 0 calc(33.33% - 20px); /* 3 buttons per row with spacing */
+    padding: 15px 30px; /* Make buttons large */
+    font-size: 18px; /* Larger font size for readability */
+    border-radius: 8px; /* Rounded corners */
+    text-align: center;
+    cursor: pointer;
+}
+
 /* Modal content styling */
 .modal-content {
     font-size: 1em;
@@ -123,13 +144,7 @@ li {
     color: gray;
 }
 
-/* Button container and group list */
-.button-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-}
-
+/* Group list */
 .group-list {
     display: flex;
     flex-wrap: wrap;

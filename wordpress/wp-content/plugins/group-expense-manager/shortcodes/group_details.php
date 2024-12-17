@@ -113,11 +113,11 @@ function gem_group_details_shortcode() {
 
         // Button Container with added buttons
         $output .= '<div class="button-container">';
-        $output .= '<button id="add-currency-btn" class="btn btn-primary" style="margin-right: 10px;">Add Currency</button>';
-        $output .= '<button id="add-entry-btn" class="btn btn-primary" style="margin-right: 10px;">Add Expense</button>';
-        $output .= '<button id="settle-btn" class="btn btn-primary" style="margin-right: 10px;">Record Payment</button>';
-        $output .= '<button id="add-user-btn" class="btn btn-primary" style="margin-right: 10px;">Add User</button>';
-        $output .= '<button id="remove-expense-btn" class="btn btn-danger" style="margin-right: 10px;">Remove Expense</button>';
+        $output .= '<button id="add-currency-btn" class="btn btn-primary">Add Currency</button>';
+        $output .= '<button id="add-entry-btn" class="btn btn-primary">Add Expense</button>';
+        $output .= '<button id="settle-btn" class="btn btn-primary">Record Payment</button>';
+        $output .= '<button id="add-user-btn" class="btn btn-primary">Add User</button>';
+        $output .= '<button id="remove-expense-btn" class="btn btn-danger">Remove Expense</button>';
         $output .= '<button id="delete-group-btn" class="btn btn-danger">Leave Group</button>';
         $output .= '</div>';
 
