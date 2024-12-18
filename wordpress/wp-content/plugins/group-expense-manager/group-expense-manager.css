@@ -32,6 +32,12 @@ li {
 }
 
 /* Table styling */
+.table-container {
+    max-height: 400px; /* Adjust container height as needed */
+    overflow-y: auto; /* Enable vertical scrolling */
+    border: 1px solid #ddd;
+}
+
 .table {
     width: 100%;
     margin: 20px 0;
@@ -44,9 +50,13 @@ li {
     text-align: left;
 }
 
-.table th {
+.table thead th {
     background-color: #f2f2f2;
     font-weight: bold;
+    position: sticky;
+    top: 0; /* Stick the header to the top of the container */
+    z-index: 10;
+    text-align: center;
 }
 
 .table tr:nth-child(even) {
@@ -84,21 +94,20 @@ li {
 
 /* Button container styling */
 .button-container {
-    display: flex; /* Use Flexbox layout */
-    flex-wrap: wrap; /* Wrap buttons to the next line */
-    justify-content: center; /* Center align buttons horizontally */
-    gap: 20px; /* Space between buttons */
-    margin: 20px auto; /* Add spacing above and below, center the container */
-    max-width: 600px; /* Limit the width of the button container */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin: 20px auto;
+    max-width: 600px;
     padding: 10px;
 }
 
-/* Button styles in the container */
 .button-container button {
-    flex: 0 0 calc(33.33% - 20px); /* 3 buttons per row with spacing */
-    padding: 15px 30px; /* Make buttons large */
-    font-size: 18px; /* Larger font size for readability */
-    border-radius: 8px; /* Rounded corners */
+    flex: 0 0 calc(33.33% - 20px);
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 8px;
     text-align: center;
     cursor: pointer;
 }
@@ -107,8 +116,8 @@ li {
 .modal-content {
     font-size: 1em;
     padding: 20px;
-    max-height: 80vh; /* Limit modal height to 80% of the viewport */
-    overflow-y: auto; /* Allow scrolling for longer content */
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .modal-title {
@@ -173,10 +182,9 @@ li {
 
 .share-input {
     width: 80px;
-    margin-left: 10px; /* Smaller gap between the share input and name */
+    margin-left: 10px;
 }
 
-/* Larger, more stylish checkboxes */
 .bigger-checkbox {
     width: 20px;
     height: 20px;
@@ -194,12 +202,11 @@ li {
 }
 
 .user-row:hover {
-    background-color: #f0f8ff; /* Light blue hover effect */
+    background-color: #f0f8ff;
 }
 
-/* Adjustments for long member names */
 .user-row .form-check-label {
-    margin-left: 10px; /* Add some space between the checkbox and the label */
+    margin-left: 10px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -207,10 +214,9 @@ li {
 }
 
 .user-row .form-check-label.long-name {
-    font-size: 0.9rem; /* Reduce font size for long names */
+    font-size: 0.9rem;
 }
 
-/* Inactive user styling */
 .user-checkbox:not(:checked) + .user-name,
 .user-checkbox:not(:checked) + .user-name + .share-input {
     opacity: 0.5;
@@ -251,7 +257,6 @@ li {
     font-weight: bold;
 }
 
-/* Delete button styling */
 .delete-btn {
     width: 50px;
     height: 40px;
@@ -275,14 +280,13 @@ li {
 
     .modal-content {
         padding: 15px;
-        max-height: 70vh; /* Reduce height to 70% on smaller devices */
+        max-height: 70vh;
     }
 
     .form-control {
         padding: 8px;
     }
 
-    /* For mobile, reduce checkbox and input sizes */
     .bigger-checkbox {
         width: 18px;
         height: 18px;
@@ -297,19 +301,17 @@ li {
     }
 }
 
-/* Fix for suggestion box visibility and z-index */
 .suggestion-box {
-    z-index: 1050; /* Ensure suggestion box stays above modal content */
-    max-height: 200px; /* Prevent suggestion box overflow */
-    overflow-y: auto; /* Allow scrolling in suggestion box */
-    background-color: white; /* Ensure the suggestion box is visible */
-    position: absolute; /* Ensure it's positioned correctly near the input */
-    width: 100%; /* Match the width of the input field */
-    border: 1px solid #ddd; /* Add a border for better visibility */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow for visibility */
+    z-index: 1050;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: white;
+    position: absolute;
+    width: 100%;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Ensure the input fields are positioned correctly */
 .form-control {
     position: relative;
 }

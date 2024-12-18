@@ -56,7 +56,9 @@ function gem_group_details_shortcode() {
 
         $group_name = sanitize_text_field($_GET['group_name']);
 
-        $output .= '<table class="table table-striped table-responsive" class="table">';
+        $output .= '<div class="table-container">';
+        $output .= '<table class="table table-striped table-responsive">';
+
         $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances in ' . htmlspecialchars($group_details['local_currency']) . ' (simplified)</th></tr></thead>';
         $output .= '<tbody><tr>';
 
@@ -72,7 +74,7 @@ function gem_group_details_shortcode() {
 
         // Members & Spends
         $output .= '<td>';
-        $output .= '<div class="members">Members & Spends:</div><ul>';
+        $output .= '<div class="members"></div><ul>';
         
         foreach ($group_details['members'] as $member) {
             $spend = 0;
@@ -110,6 +112,7 @@ function gem_group_details_shortcode() {
         $output .= '</td>'; // Close Balances column
 
         $output .= '</tr></tbody></table>';
+        $output .= '</div>';
 
         // Button Container with added buttons
         $output .= '<div class="button-container">';
@@ -122,14 +125,22 @@ function gem_group_details_shortcode() {
         $output .= '</div>';
 
         $output .= '<div id="group-entries">';
-        $output .= '<h4>Expenses</h4>' . gem_display_expenses(array_reverse($group_details['entries']),$group_details['members']);
-        $output .= '<h4>Payments</h4>' . gem_display_payments(array_reverse($group_details['entries']),$group_details['members']);
+        $output .= '<h4>Expenses</h4><div class="table-container">';
+        $output .= gem_display_expenses(array_reverse($group_details['entries']), $group_details['members']);
+        $output .= '</div>';
+
+        $output .= '<h4>Payments</h4><div class="table-container">';
+        $output .= gem_display_payments(array_reverse($group_details['entries']), $group_details['members']);
+        $output .= '</div>';
+
         $output .= '</div>';
 
         // Logs Section
         $output .= '<div id="group-logs">';
         $output .= '<h4>Logs</h4>';
-        $output .= '<table class="table table-striped table-responsive" class="table">';
+        $output .= '<div class="table-container">';
+        $output .= '<table class="table table-striped table-responsive">';
+
         $output .= '<tbody>';
         foreach ($group_details['logs'] as $log) {
             // Break the log into words by spaces
@@ -160,6 +171,7 @@ function gem_group_details_shortcode() {
         }
         
         $output .= '</tbody></table>';
+        $output .= '</div>'; // Close table-container
         $output .= '</div>';
 
         // Modals for Add Expense, Record Payment, Add Currency, Add User, and Remove Expense
@@ -184,7 +196,7 @@ function gem_group_details_shortcode() {
                     
                     <div class="form-group">
                         <label for="entry-amount">Amount:</label>
-                        <input type="number" id="entry-amount" class="form-control" required min="1" step="0.01" placeholder="Enter amount">
+                        <input type="number" id="entry-amount" class="form-control" required min="0.01" step="0.01" placeholder="Enter amount">
                         <div class="invalid-feedback">
                             Please enter a valid amount.
                         </div>
@@ -257,7 +269,7 @@ $output .= '<div class="modal fade" id="settle-modal" tabindex="-1" role="dialog
             <form id="settle-form">
                 <div class="form-group">
                     <label for="payment-amount">Amount:</label>
-                    <input type="number" id="payment-amount" class="form-control" required min="1" step="0.01">
+                    <input type="number" id="payment-amount" class="form-control" required min="0.01" step="0.01">
                 </div>
                 
                 <div class="form-group">
