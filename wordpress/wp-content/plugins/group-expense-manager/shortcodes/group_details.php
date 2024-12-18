@@ -56,26 +56,34 @@ function gem_group_details_shortcode() {
 
         $group_name = sanitize_text_field($_GET['group_name']);
 
-        $output .= '<div class="table-container">';
-        $output .= '<table class="table table-striped table-responsive">';
+        $output .= '<div class="table-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px;">';
+        $output .= '<table class="table table-striped table-responsive" style="width: 100%; border-collapse: collapse;">';
 
-        $output .= '<thead><tr><th>Currency Information</th><th>Members & Spends</th><th>Balances in ' . htmlspecialchars($group_details['local_currency']) . ' (simplified)</th></tr></thead>';
-        $output .= '<tbody><tr>';
+        // Sticky Header
+        $output .= '<thead class="sticky-table-header" style="position: sticky; top: 0; z-index: 2; background-color: #f2f2f2;">';
+        $output .= '<tr>';
+        $output .= '<th style="border-bottom: 2px solid #ccc; text-align: center;">Currency Information</th>';
+        $output .= '<th style="border-bottom: 2px solid #ccc; text-align: center;">Members & Spends</th>';
+        $output .= '<th style="border-bottom: 2px solid #ccc; text-align: center;">Balances in ' . htmlspecialchars($group_details['local_currency']) . ' (simplified)</th>';
+        $output .= '</tr>';
+        $output .= '</thead>';
 
-        // Currency Information
-        $output .= '<td>';
+        // Table Body
+        $output .= '<tbody>';
+
+        // Row Content
+        $output .= '<tr>';
+        $output .= '<td style="vertical-align: top;">';
         $output .= '<p>Local Currency: ' . htmlspecialchars($group_details['local_currency']) . '</p>';
         $output .= '<ul>';
         foreach ($group_details['currency_conversion_rates'] as $currency => $rate) {
             $output .= '<li>1 ' . htmlspecialchars($currency) . ' = ' . htmlspecialchars($rate) . ' ' . htmlspecialchars($group_details['local_currency']) . '</li>';
         }
         $output .= '</ul>';
-        $output .= '</td>'; // Close Currency Information column
+        $output .= '</td>';
 
-        // Members & Spends
-        $output .= '<td>';
-        $output .= '<div class="members"></div><ul>';
-        
+        $output .= '<td style="vertical-align: top;">';
+        $output .= '<ul>';
         foreach ($group_details['members'] as $member) {
             $spend = 0;
             foreach ($group_details['spends'] as $spend_entry) {
@@ -88,30 +96,26 @@ function gem_group_details_shortcode() {
             $output .= '<li>' . htmlspecialchars($display_name) . ': ' . htmlspecialchars(number_format($spend, 2)) . ' ' . htmlspecialchars($group_details['local_currency']) . '</li>';
         }
         $output .= '</ul>';
-        $output .= '</td>'; // Close Members & Spends column
+        $output .= '</td>';
 
-        // Balances
-        $output .= '<td>';
+        $output .= '<td style="vertical-align: top;">';
         if (!empty($group_details['balances'])) {
             $output .= '<ul>';
             foreach ($group_details['balances'] as $balance) {
                 $debtor = ($balance[0] == $email) ? 'You' : get_user_display_name($balance[0], $group_details['members']);
                 $creditor = ($balance[1] == $email) ? 'You' : get_user_display_name($balance[1], $group_details['members']);
-                
-                // Check if the currency key exists before accessing
                 $currency = isset($balance[3]) ? htmlspecialchars($balance[3]) : '';
-
-                // Ensure debtor and creditor are not null
                 $output .= '<li>' . htmlspecialchars($debtor ?? '') . ' should pay ' . htmlspecialchars($balance[2] ?? '') . ' ' . $currency . ' to ' . htmlspecialchars($creditor ?? '') . '</li>';
             }
             $output .= '</ul>';
         } else {
-            // Display when everyone is settled
             $output .= '<p>Everyone is settled</p>';
         }
-        $output .= '</td>'; // Close Balances column
+        $output .= '</td>';
+        $output .= '</tr>';
 
-        $output .= '</tr></tbody></table>';
+        $output .= '</tbody>';
+        $output .= '</table>';
         $output .= '</div>';
 
         // Button Container with added buttons
@@ -125,11 +129,11 @@ function gem_group_details_shortcode() {
         $output .= '</div>';
 
         $output .= '<div id="group-entries">';
-        $output .= '<h4>Expenses</h4><div class="table-container">';
+        $output .= '<h4 class="sticky-section-heading">Expenses</h4><div class="table-container">';
         $output .= gem_display_expenses(array_reverse($group_details['entries']), $group_details['members']);
         $output .= '</div>';
 
-        $output .= '<h4>Payments</h4><div class="table-container">';
+        $output .= '<h4 class="sticky-section-heading">Payments</h4><div class="table-container">';
         $output .= gem_display_payments(array_reverse($group_details['entries']), $group_details['members']);
         $output .= '</div>';
 

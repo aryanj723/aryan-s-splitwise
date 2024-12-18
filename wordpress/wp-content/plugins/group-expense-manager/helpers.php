@@ -39,8 +39,12 @@ function gem_display_expenses($entries, $members) {
     });
 
     $logged_in_user_email = wp_get_current_user()->user_email;
-    $output = '<table class="table table-striped table-responsive" class="table">';
-    $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Paid By</th><th>Shares</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
+
+    // Added 'sticky-table-header' class to the thead element
+    $output = '<div class="table-container">'; // Wrap table with a scrollable container
+    $output .= '<table class="table table-striped table-responsive">';
+    $output .= '<thead class="sticky-table-header"><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Paid By</th><th>Shares</th><th>Date</th><th>Added By</th></tr></thead>';
+    $output .= '<tbody>';
     
     foreach ($entries as $entry) {
         if ($entry['type'] !== 'settlement') {
@@ -54,7 +58,6 @@ function gem_display_expenses($entries, $members) {
             $output .= '<td>';
 
             if (isset($entry['shares'])) {
-                // Fix: Pass $members into the scope of the array_map callback
                 $output .= implode(', ', array_map(
                     function($k, $v) use ($logged_in_user_email, $members) {
                         $display_name = ($k == $logged_in_user_email) ? 'You' : get_user_display_name($k, $members);
@@ -70,9 +73,7 @@ function gem_display_expenses($entries, $members) {
 
             // Parsing and formatting the date
             $raw_date = $entry['date'];
-            $formatted_date = htmlspecialchars($raw_date); // Default to the raw date
-
-            // Attempt to format the date
+            $formatted_date = htmlspecialchars($raw_date);
             $date_parts = explode(':', $raw_date);
             if (count($date_parts) >= 4) {
                 $datetime_str = $date_parts[0] . ':' . $date_parts[1] . ':' . $date_parts[2];
@@ -81,7 +82,6 @@ function gem_display_expenses($entries, $members) {
                     $date = new DateTime($datetime_str);
                     $formatted_date = $date->format('M j, Y \a\t g:i:s') . ':' . $milliseconds . ' ' . $date->format('A') . ' UTC';
                 } catch (Exception $e) {
-                    // Use raw date if formatting fails
                 }
             }
 
@@ -91,6 +91,7 @@ function gem_display_expenses($entries, $members) {
         }
     }
     $output .= '</tbody></table>';
+    $output .= '</div>'; // Close the scrollable container
     return $output;
 }
 
@@ -101,8 +102,12 @@ function gem_display_payments($entries, $members) {
     });
 
     $logged_in_user_email = wp_get_current_user()->user_email;
-    $output = '<table class="table table-striped table-responsive" class="table">';
-    $output .= '<thead><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Date</th><th>Added By</th></tr></thead><tbody>';
+
+    // Added 'sticky-table-header' class to the thead element
+    $output = '<div class="table-container">'; // Wrap table with a scrollable container
+    $output .= '<table class="table table-striped table-responsive">';
+    $output .= '<thead class="sticky-table-header"><tr><th>Description</th><th>Amount</th><th>Currency</th><th>Date</th><th>Added By</th></tr></thead>';
+    $output .= '<tbody>';
     
     foreach ($entries as $entry) {
         if ($entry['type'] === 'settlement') {
@@ -136,6 +141,7 @@ function gem_display_payments($entries, $members) {
         }
     }
     $output .= '</tbody></table>';
+    $output .= '</div>'; // Close the scrollable container
     return $output;
 }
 
